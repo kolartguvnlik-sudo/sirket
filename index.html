@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b1a27">
+
+<title>CGA Güvenlik Sistemleri - Giriş Paneli</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 🔴 SCROLL TAMAMEN KAPALI */
+}
+
+:root{
+  --cga-bg-main: #0b1a27;
+  --cga-bg-secondary: #1a2b3f;
+  --cga-gold: #f1c40f;
+  --cga-gold-soft: rgba(241,196,15,0.35);
+  --cga-green: #2ecc71;
+  --cga-green-dark: #27ae60;
+  --cga-text-main: #ecf0f1;
+  --cga-text-soft: rgba(236,240,241,0.65);
+  --cga-card-bg: rgba(255,255,255,0.06);
+  --cga-border-soft: rgba(255,255,255,0.12);
+}
+
+body {
+  font-family:'Montserrat',sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0b1a27; 
+  background:
+    radial-gradient(circle at top, rgba(241,196,15,0.08), transparent 40%),
+    linear-gradient(135deg, var(--cga-bg-main), var(--cga-bg-secondary));
+  color: #ecf0f1;
+}
+
+.container {
+  width: 380px;
+  padding: 40px 30px 70px; 
+  border-radius: 26px;
+  background: var(--cga-card-bg);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 0 0 1px var(--cga-border-soft),
+              0 20px 50px rgba(0,0,0,0.7);
+  text-align: center;
+  transform: translateY(-20px);
+  max-height: calc(100% - 20px);
+  overflow: hidden;
+}
+
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--cga-gold);
+  text-shadow: 0 0 10px var(--cga-gold-soft), 0 0 25px rgba(241,196,15,0.25);
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.site-name{
+  display:none;
+  font-size:28px;
+  font-weight:800;
+  letter-spacing:1px;
+  margin:1px 0 18px;
+  color:#2ecc71;
+  text-shadow: 0 0 10px rgba(46,204,113,0.6),
+               0 0 25px rgba(46,204,113,0.4);
+  animation: glowIn .6s ease;
+}
+
+@keyframes glowIn{
+  from{ opacity:0; transform:translateY(-6px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+h2 { font-size: 18px; color: #ecf0f1; margin-bottom: 30px; }
+
+.role-buttons {display:flex; justify-content: space-between; margin-bottom:25px;}
+.role-buttons button {
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:15px;
+  cursor:pointer;
+  font-weight:700;
+  background: linear-gradient(90deg,#223344,#1a2633);
+  color: var(--cga-text-soft);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.35);
+  transition: 0.3s;
+}
+
+.role-buttons button.active {
+  background: linear-gradient(90deg,var(--cga-gold),#f39c12);
+  color:#111;
+  box-shadow: 0 0 18px var(--cga-gold-soft);
+}
+
+.input-group { display:flex; flex-direction:column; text-align:left; animation:fadeIn 0.4s; margin-bottom: 28px;}
+
+input[type="text"], input[type="password"] {width:100%; padding:12px; margin:8px 0; border-radius:12px; border:none; background: rgba(255,255,255,0.1); color:white; font-size: 14px;}
+input::placeholder { color: rgba(236,240,241,0.6); }
+
+.remember {display:flex; align-items:center; gap:8px; font-size: 14px; margin-top:8px;}
+.remember input[type="checkbox"] { margin:0; cursor:pointer; }
+.remember label { margin:0; cursor:pointer; color: #ffffff; }
+
+.loginBtn {
+  width:100%;
+  padding:13px;
+  margin-top:8px;
+  border:none;
+  border-radius:16px;
+  background: linear-gradient(90deg,var(--cga-green-dark),var(--cga-green));
+  color:white;
+  font-weight:700;
+  font-size:16px;
+  cursor:pointer;
+  box-shadow: 0 6px 20px rgba(46,204,113,0.45);
+  transition:0.25s;
+  margin-bottom: 24px;
+}
+.loginBtn:hover { background: linear-gradient(90deg,#2ecc71,#27ae60); transform:translateY(-2px); }
+
+.message { margin-top:15px; color:#e74c3c; font-weight:600; text-align:center; min-height:20px; }
+
+.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); align-items:center; justify-content:center; }
+.modal-content { background:#2c3e50; padding:25px; border-radius:20px; width:320px; text-align:center; }
+
+@keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+
+.corner-info{
+  position: fixed;
+  bottom: 12px;
+  right: 14px;
+  text-align: right;
+  font-size: 11px;
+  color: rgba(189,195,199,0.7);
+  line-height: 1.4;
+  user-select: none;
+  pointer-events: none;
+}
+
+.corner-info .version{ font-size: 10px; opacity: 0.8; }
+
+.cga-logo{ width: 450px; max-width: 80%; margin: 20px auto 0; }
+
+@keyframes logoIn{
+  from{ opacity:0; transform: translateY(-8px) scale(.95); }
+  to{ opacity:1; transform: translateY(0) scale(1); }
+}
+
+.corner-top{ position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); right: 14px; font-size: 10px; color: rgba(189,195,199,0.7); user-select: none; pointer-events: none; }
+.corner-bottom{ position: fixed; bottom: 12px; right: 14px; font-size: 11px; color: rgba(189,195,199,0.7); user-select: none; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<img src="logo.png" class="cga-logo" alt="CGA Güvenlik Sistemleri Logo">
+<div id="siteName" class="site-name"></div>
+<h2>Giriş Paneli</h2>
+
+<div class="role-buttons">
+    <button id="securityBtn" class="active">ŞİRKET GİRİŞİ</button>
+</div>
+
+<div id="securityGroup" class="input-group active">
+    <input type="text" id="secUsername" placeholder="Kullanıcı Adı">
+    <input type="password" id="secPassword" placeholder="Şifre">
+    <div class="remember">
+      <input type="checkbox" id="secRemember">
+      <label for="secRemember">Kullanıcıyı hatırla</label>
+    </div>
+    <button class="loginBtn" id="secLoginBtn">Giriş Yap</button>
+</div>
+
+<div class="message" id="message"></div>
+</div>
+
+<div class="modal" id="adminModal">
+  <div class="modal-content">
+    <h3>Yönetici Girişi</h3>
+    <input type="text" id="adminUsername" placeholder="Kullanıcı Adı">
+    <input type="password" id="adminPassword" placeholder="Şifre">
+    <button id="adminLoginBtn" class="loginBtn">Giriş Yap</button>
+    <button id="closeAdminBtn" style="background:#c0392b; margin-top:10px;">Kapat</button>
+  </div>
+</div>
+<button id="installBtn"
+  style="position: fixed; top: 12px; left: 12px; font-size: 20px; display:none; z-index:500;">
+  📲 Uygulamayı Yükle
+</button>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAUjb4CBSZxjCTxpx8S_rGLOLDeRtDTs7U",
+  authDomain: "bencga-db51b.firebaseapp.com",
+  databaseURL: "https://bencga-db51b-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "bencga-db51b",
+  storageBucket: "bencga-db51b.firebasestorage.app",
+  messagingSenderId: "568702678520",
+  appId: "1:568702678520:web:82d3c6a98216990fa3d20d",
+  measurementId: "G-703BGXWTFN"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const siteNameEl = document.getElementById("siteName");
+
+const securityBtn = document.getElementById("securityBtn");
+const securityGroup = document.getElementById("securityGroup");
+const cgaTitle = document.querySelector(".cga-logo");
+const msg = document.getElementById("message");
+const adminModal = document.getElementById("adminModal");
+
+const secUsername = document.getElementById("secUsername");
+const secPassword = document.getElementById("secPassword");
+const secRemember = document.getElementById("secRemember");
+
+const adminUsername = document.getElementById("adminUsername");
+const adminPassword = document.getElementById("adminPassword");
+const adminLoginBtn = document.getElementById("adminLoginBtn");
+const closeAdminBtn = document.getElementById("closeAdminBtn");
+
+// Admin modal açma
+let cgaClickCount=0;
+cgaTitle.addEventListener("click", ()=>{
+  cgaClickCount++;
+  if(cgaClickCount>=10){
+    adminModal.style.display="flex";
+    cgaClickCount=0;
+  }
+});
+closeAdminBtn.addEventListener("click", ()=>adminModal.style.display="none");
+
+// Sayfa yüklenince hatırlanan kullanıcıları doldur
+window.addEventListener("load", ()=>{
+  const secStored = JSON.parse(localStorage.getItem("securityUser"));
+  if(secStored){
+    secUsername.value = secStored.username;
+    secPassword.value = secStored.password;
+    secRemember.checked = true;
+  }
+});
+
+// Otomatik büyük harfe çevir
+[secUsername, secPassword].forEach(el=>{
+  el.addEventListener("input", ()=>{
+    el.value = el.value.toLocaleUpperCase('tr');
+  });
+});
+
+
+// Login fonksiyonu
+async function loginUser(username, password, role){
+  username = username.trim();
+  password = password.trim();
+  msg.textContent="";
+
+  if(!username || !password){
+    msg.textContent="Kullanıcı adı ve şifre gerekli!";
+    return;
+  }
+
+  try {
+    // Admin login modal
+    const adminSnap = await get(child(ref(db), 'admin'));
+    if(adminSnap.exists()){
+      const adminUser = adminSnap.val();
+      if(username === adminUser.username && password === adminUser.password){
+        sessionStorage.setItem("currentUser", JSON.stringify({username, type:"admin"}));
+        window.location.href = "mod.html";
+        return;
+      }
+    }
+
+    // Normal kullanıcı login
+    const userSnap = await get(child(ref(db), 'users/' + username));
+    if(!userSnap.exists()){
+      msg.textContent="Kullanıcı bulunamadı!";
+      return;
+    }
+    const user = userSnap.val();
+    if(user.password !== password){
+      msg.textContent="Şifre hatalı!";
+      return;
+    }
+
+    sessionStorage.setItem("currentUser", JSON.stringify({username:user.username,type:user.type}));
+
+    if(role === "security"){
+      if(secRemember.checked) localStorage.setItem("securityUser", JSON.stringify({username,password}));
+      else localStorage.removeItem("securityUser");
+
+      if(user.type === "company"){
+        window.location.href = "sirket.html";
+      } else if(user.type === "security"){
+        window.location.href = "guvenlik.html";
+      } else if(user.type === "admin"){
+        window.location.href = "yetkili.html";
+      } else {
+        msg.textContent="Yetki hatalı!";
+      }
+    }
+
+  } catch(err){
+    console.error(err);
+    msg.textContent="Bağlantı hatası!";
+  }
+}
+
+// Login butonları
+document.getElementById("secLoginBtn").addEventListener("click", ()=>{
+  loginUser(secUsername.value, secPassword.value, "security");
+});
+
+// Admin login
+adminLoginBtn.addEventListener("click", ()=>{
+  loginUser(adminUsername.value, adminPassword.value, "admin");
+});
+
+// Site adı yükleme
+async function loadSiteName(){
+  try{
+    const snap = await get(child(ref(db), "settings/siteName"));
+    if(snap.exists()){
+      const name = snap.val().trim();
+      if(name !== ""){
+        siteNameEl.textContent = name;
+        siteNameEl.style.display = "block";
+      }
+    }
+  }catch(e){ }
+}
+loadSiteName();
+
+// ENTER ile giriş
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    document.getElementById("secLoginBtn").click();
+    if (adminModal.style.display === "flex") {
+      document.getElementById("adminLoginBtn").click();
+    }
+  }
+});
+window.addEventListener('load', () => {
+  let deferredPrompt;
+  const installBtn = document.getElementById('installBtn');
+
+  // PWA yükleme butonunu gizle
+  if(!installBtn) return;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.display = 'block'; // butonu göster
+  });
+
+  installBtn.addEventListener('click', async () => {
+    installBtn.style.display = 'none';
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    }
+  });
+
+  // Service Worker kaydı
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(console.error);
+  }
+});
+
+
+</script>
+
+<div class="corner-bottom">
+  © 2025 CGA Güvenlik Sistemleri
+</div>
+
+<div class="corner-top">
+  v1.0.0 
+</div>
+
+</body>
+</html>

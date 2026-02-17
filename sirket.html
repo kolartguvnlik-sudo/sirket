@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Şirket</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== GENEL ===== */
+body {margin:0; font-family:'Montserrat', sans-serif; background: linear-gradient(135deg,#0a1118,#1c1f26); color:#ecf0f1; overflow-x:hidden;}
+header {display:flex; justify-content:space-between; align-items:center; padding:20px 30px; background:#1b2838; box-shadow:0 10px 30px rgba(0,0,0,0.6); position:relative; border-bottom:2px solid #ffcc00;}
+header h1 {font-size:1.9rem; color:#ffcc00; margin:0; text-shadow:2px 2px 6px rgba(0,0,0,0.7); letter-spacing:1px;}
+.container {max-width:1000px; margin:40px auto; padding:20px;}
+.panel {background: rgba(255,255,255,0.08); padding:30px; border-radius:25px; box-shadow:0 12px 35px rgba(0,0,0,0.6); margin-top:20px; position:relative; transition: transform 0.3s ease, box-shadow 0.3s ease; backdrop-filter: blur(4px);}
+.panel:hover {transform: translateY(-4px); box-shadow:0 18px 50px rgba(0,0,0,0.8);}
+.panel h3 {text-align:center; margin-bottom:20px; font-weight:700; font-size:1.7rem; color:#ffd700; text-shadow:1px 1px 4px rgba(0,0,0,0.6);}
+.status div {display:flex; align-items:center; justify-content:space-between; transition: transform 0.3s ease, background 0.3s ease;}
+.status div:hover { transform: scale(1.02); background: rgba(0,0,0,0.25); }
+.action-btn {padding:18px 45px; font-size:1.25rem; font-weight:700; border:none; border-radius:25px; cursor:pointer; margin:10px; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(0,0,0,0.5);}
+.action-btn.green { background:linear-gradient(135deg,#2ecc71,#27ae60); color:#fff; }
+.action-btn.yellow { background:linear-gradient(135deg,#f1c40f,#f39c12); color:#000; }
+.action-btn.red { background:linear-gradient(135deg,#e74c3c,#c0392b); color:#fff; }
+.action-btn:hover { transform: translateY(-3px) scale(1.05); box-shadow:0 12px 30px rgba(0,0,0,0.7);}
+#profileModal {display:none; position:fixed; top:50%; left:50%; transform: translate(-50%,-50%); background: rgba(18,18,18,0.98); padding:30px; border-radius:25px; box-shadow:0 15px 50px rgba(0,0,0,0.8); z-index:9999; width:90%; max-width:450px; animation: fadeIn 0.4s ease forwards;}
+@keyframes fadeIn { from {opacity:0; transform:translate(-50%,-48%);} to {opacity:1; transform:translate(-50%,-50%);} }
+#profileModal h3 {text-align:center; margin-bottom:20px; font-size:1.8rem; color:#ffd700; text-shadow:1px 1px 3px rgba(0,0,0,0.7);}
+#profileModal label { display:block; margin-top:15px; font-size:14px; text-transform: uppercase; color:#ccc; }
+#profileModal input { width:100%; padding:12px; border-radius:15px; border:none; outline:none; margin-top:5px; background:#222f3e; color:#fff; transition:0.3s ease;}
+#profileModal input:focus { background:#2c3e50; box-shadow:0 0 8px #27ae60; }
+#profileModal button { margin-top:20px; padding:12px 18px; border-radius:15px; border:none; cursor:pointer; font-weight:700; transition:0.3s ease, transform 0.2s ease;}
+#updatePasswordBtn { background:linear-gradient(135deg,#2ecc71,#27ae60); color:#fff; }
+#updatePasswordBtn:hover { transform: scale(1.05); background:linear-gradient(135deg,#27ae60,#2ecc71); }
+#profileClose { position:absolute; top:15px; right:15px; cursor:pointer; font-size:24px; color:#fff; transition:0.3s ease, transform 0.2s ease;}
+#profileClose:hover { color:#ffcc00; transform:scale(1.2); }
+.togglePassword { position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;}
+
+/* ===== SAĞ ÜST BUTONLAR ===== */
+.top-right-actions {
+    position: fixed;
+    top:20px;
+    right:25px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    z-index:1000;
+}
+#profileIcon {
+    width:40px;
+    height:40px;
+    font-size:22px;
+    border-radius:50%;
+    background: linear-gradient(135deg,#2ecc71,#27ae60);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+    box-shadow:0 8px 25px rgba(0,0,0,0.6);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+#profileIcon:hover { transform: scale(1.1); box-shadow:0 12px 30px rgba(0,0,0,0.8); }
+
+#logoutBtn {
+    padding:10px 15px;
+    font-size:13px;
+    border-radius:12px;
+    background: linear-gradient(135deg,#e74c3c,#c0392b);
+    color:#fff;
+    border:none;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 8px 25px rgba(0,0,0,0.6);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+#logoutBtn:hover { transform: translateY(-2px); box-shadow:0 12px 30px rgba(0,0,0,0.8); }
+
+/* ===== TABLO ===== */
+#statusTable { width:100%; border-collapse: collapse; margin-top:20px; }
+#statusTable th, #statusTable td { border:1px solid rgba(255,255,255,0.3); padding:10px; text-align:center; }
+#statusTable th { background: rgba(255,255,255,0.1); color:#ffd700; }
+.bestUser { background: rgba(46,204,113,0.3); font-weight:700; }
+.worstUser { background: rgba(231,76,60,0.3); font-weight:700; }
+/* KARTLAR YAN YANA + KAREYE YAKIN */
+
+
+.eksik-card{
+  background: rgba(0,0,0,0.35);
+  padding:12px;
+  border-radius:14px;
+  border-left:4px solid #e74c3c;
+
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+
+  font-size:13px;
+}/* SADECE EKSİK DEVRİYE PANELİNİ KÜÇÜLT */
+.panel:nth-of-type(2){
+  padding:12px !important;
+}
+
+/* KARTLARIN DURDUĞU ALAN */
+/* EKSİK DEVRİYE KART ALANI – 3 KART */
+#eksikDevriyeListesi{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 kart */
+  gap:16px;
+  padding:10px 0;
+  background: transparent;
+}
+@media (max-width: 900px){
+  #eksikDevriyeListesi{
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px){
+  #eksikDevriyeListesi{
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* KAREYE YAKIN KART */
+.eksik-card{
+  background: rgba(0,0,0,0.4);
+  padding:12px;
+  border-radius:14px;
+  border-left:4px solid #e74c3c;
+
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+
+  font-size:13px;
+  min-height:unset;
+}
+/* EKSİK DEVRİYE KART İÇİ TABLO DÜZENİ */
+.eksik-table{
+  display:grid;
+  grid-template-columns: 140px 1fr;
+  row-gap:8px;
+  column-gap:10px;
+  font-size:13px;
+}
+
+.eksik-table .etiket{
+  color:#f1c40f;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.eksik-table .deger{
+  color:#ecf0f1;
+  font-weight:500;
+  word-break:break-word;
+}
+/* EKSİK DEVRİYE BAŞLIKLARI RENK */
+.label{
+  color:#f1c40f;       /* başlık rengi (sarı) */
+  font-weight:600;
+  white-space:nowrap; /* başlık satır kırmasın */
+}
+
+.value{
+  color:#ecf0f1;       /* değer rengi */
+  font-weight:500;
+}
+.eksik-actions{
+  margin-top:8px;
+  display:flex;
+  justify-content:flex-end;
+}
+
+.eksik-sil-btn{
+  background:#c0392b;
+  color:#fff;
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+  font-size:12px;
+  cursor:pointer;
+  font-weight:600;
+  transition:0.3s;
+}
+
+.eksik-sil-btn:hover{
+  background:#e74c3c;
+  transform:scale(1.05);
+}
+
+
+
+
+
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Şirket</h1>
+</header>
+
+<div class="top-right-actions">
+  <div id="profileIcon" title="Profil">👤</div>
+  <button id="logoutBtn" title="Çıkış">Çıkış</button>
+</div>
+<div style="max-width:320px;margin:25px auto;">
+  <select id="siteSelect" style="
+    width:100%;
+    padding:12px;
+    border-radius:14px;
+    background:#1b2838;
+    color:#fff;
+    border:2px solid #ffd700;
+    font-weight:700;
+  ">
+    <option value="">Proje Seçiniz</option>
+  </select>
+</div>
+<div class="container">
+  <div class="panel">
+    <h3>Güvenlik Durumu</h3>
+    <div id="securityStatus" class="status">Yükleniyor...</div>
+  </div>
+
+
+
+
+
+  <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-top:30px;">
+<button class="action-btn green" onclick="goPage('olaylar.html')">Olay Takip</button>
+ <button class="action-btn yellow" onclick="goPage('tamam.html')">Nöbet Takip</button>
+<button class="action-btn red" onclick="goPage('takip.html')">Devriye Takip</button>
+    <button class="action-btn" style="background:#3498db;color:#fff;" id="statusBtn">TÜM PERSONEL</button>
+  </div>
+</div>
+<div class="panel">
+
+  <h3 class="panel-title panel-header">
+    <span>Eksik Devriye Bildirimleri</span>
+
+    <button class="toplu-sil-btn" onclick="tumEksikleriSil()">
+      🗑️ Tümünü Sil
+    </button>
+  </h3>
+
+  <div id="eksikDevriyeListesi" class="status">
+    Yükleniyor...
+  </div>
+
+</div>
+
+<!-- PROFİL MODAL -->
+<div id="profileModal">
+  <span id="profileClose">✖</span>
+  <h3>Profil</h3>
+  <label>Kullanıcı Adı (değiştirilemez)</label>
+  <input type="text" id="profileUsername" disabled>
+  <label>ESKİ ŞİFRE</label>
+  <div style="position:relative;">
+    <input type="password" id="oldPassword" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+    <span class="togglePassword" data-target="oldPassword">👀</span>
+  </div>
+  <label>YENİ ŞİFRE</label>
+  <div style="position:relative;">
+    <input type="password" id="newPassword" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+    <span class="togglePassword" data-target="newPassword">👀</span>
+  </div>
+  <button id="updatePasswordBtn">Şifreyi Güncelle</button>
+  <div id="profileMessage" style="margin-top:10px;font-size:14px;"></div>
+</div>
+
+<!-- TÜM GÜVENLİKLER MODAL -->
+<div id="guardsModal" style="display:none;position:fixed;top:50%;left:50%;
+transform:translate(-50%,-50%);
+background:rgba(18,18,18,0.98);
+padding:25px;
+border-radius:25px;
+box-shadow:0 15px 50px rgba(0,0,0,0.8);
+z-index:9999;
+width:90%;
+max-width:700px;
+max-height:90%;
+overflow:auto;">
+
+  <h3 style="text-align:center;color:#ffd700;">Tüm Güvenlikler</h3>
+
+  <input id="guardSearch" placeholder="Güvenlik ara..."
+    style="width:100%;padding:12px;border-radius:12px;
+    border:none;margin-bottom:15px;background:#1b2838;color:#fff;">
+
+  <div id="guardsList"></div>
+
+  <button onclick="guardsModal.style.display='none'"
+    style="margin-top:20px;padding:12px;border-radius:12px;
+    border:none;background:#c0392b;color:#fff;width:100%;font-weight:700;">
+    Kapat
+  </button>
+</div>
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getDatabase, ref, onValue, get, update, remove } 
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+// 🔵 MERKEZ FIREBASE
+const merkezConfig = {
+apiKey: "AIzaSyAM5NHBpRHIlttNXwJ9YKDypR4eoyQbDeM",
+  authDomain: "kolartguvenlik-e002d.firebaseapp.com",
+  databaseURL: "https://kolartguvenlik-e002d-default-rtdb.firebaseio.com",
+  projectId: "kolartguvenlik-e002d",
+  storageBucket: "kolartguvenlik-e002d.firebasestorage.app",
+  messagingSenderId: "212955174898",
+  appId: "1:212955174898:web:f77501991c1648fb66bd6b",
+  measurementId: "G-TCGDNDYY6Y"
+};
+
+const merkezApp = initializeApp(merkezConfig, "merkez");
+const merkezDB = getDatabase(merkezApp);
+
+const siteSelect = document.getElementById("siteSelect");
+document.getElementById("statusBtn").addEventListener("click", () => {
+  loadAllGuards();              // güvenlikleri çek
+  guardsModal.style.display = "block"; // modal aç
+});
+
+onValue(ref(merkezDB, "sites"), snap => {
+  siteSelect.innerHTML = `<option value="">Proje Seçiniz</option>`;
+  const val = snap.val();
+  if(!val) return;
+
+  for(const siteId in val){
+    const opt = document.createElement("option");
+    opt.value = siteId;
+    opt.textContent = val[siteId].siteName;
+    siteSelect.appendChild(opt);
+  }
+});
+let app = null;
+let db = null;
+window.goPage = function(page){
+  if(!siteSelect.value){
+    alert("Lütfen önce bir proje seçiniz.");
+    return;
+  }
+
+  // seçili siteyi sakla
+  sessionStorage.setItem("selectedSiteId", siteSelect.value);
+
+  // yönlendir
+  window.location.href = page;
+};
+
+siteSelect.addEventListener("change", async () => {
+  const siteId = siteSelect.value;
+  if (!siteId) return;
+
+  // seçimi sakla
+  localStorage.setItem("selectedSiteId", siteId);
+
+  // eski verileri temizle
+  securityStatus.innerHTML = "Yükleniyor...";
+  eksikDevriyeListesi.innerHTML = "Yükleniyor...";
+  if (securityInterval) clearInterval(securityInterval);
+
+  // Firebase config yükle
+  const snap = await get(ref(merkezDB, `sites/${siteId}/config`));
+  if (!snap.exists()) {
+    alert("Site Firebase bilgisi bulunamadı!");
+    return;
+  }
+
+  const config = snap.val();
+
+  if (!getApps().some(a => a.name === siteId)) {
+    app = initializeApp(config, siteId);
+  } else {
+    app = getApps().find(a => a.name === siteId);
+  }
+
+  db = getDatabase(app);
+
+  loadSecurityStatus();
+  startSecurityInterval();
+  loadEksikDevriyeler();
+});
+
+
+
+let storedUser = sessionStorage.getItem("currentUser");
+let currentUser = storedUser ? JSON.parse(storedUser).username : null;
+let cameFrom = storedUser ? JSON.parse(storedUser).cameFrom : null;
+if(!currentUser){ alert("Lütfen önce giriş yapın!"); window.location.href="index.html"; }
+
+const profileModal=document.getElementById("profileModal"),
+      profileIcon=document.getElementById("profileIcon"),
+      profileClose=document.getElementById("profileClose"),
+      profileUsername=document.getElementById("profileUsername"),
+      oldPassword=document.getElementById("oldPassword"),
+      newPassword=document.getElementById("newPassword"),
+      updatePasswordBtn=document.getElementById("updatePasswordBtn"),
+      profileMessage=document.getElementById("profileMessage"),
+      logoutBtn=document.getElementById("logoutBtn");
+
+profileUsername.value=currentUser;
+profileIcon.addEventListener('click',()=>{profileModal.style.display='block';});
+profileClose.addEventListener('click',()=>{profileModal.style.display='none';});
+
+logoutBtn.addEventListener('click',()=>{ 
+    sessionStorage.removeItem("currentUser");
+    if(cameFrom==='sirket') window.location.href='sirket.html';
+    else window.location.href='index.html';
+});
+
+updatePasswordBtn.addEventListener('click',async()=>{
+  profileMessage.innerText='';
+  const oldPwd=oldPassword.value; const newPwd=newPassword.value;
+  if(!oldPwd||!newPwd){profileMessage.innerText='Lütfen eski ve yeni şifreyi giriniz.'; return;}
+  try{
+    const snapshot=await get(ref(db,'users/'+currentUser));
+    if(!snapshot.exists()){profileMessage.innerText='Kullanıcı bulunamadı.'; return;}
+    const userData=snapshot.val();
+    if(userData.password!==oldPwd){profileMessage.innerText='Eski şifre hatalı.'; return;}
+    await update(ref(db,'users/'+currentUser),{password:newPwd});
+    profileMessage.innerText='Şifre başarıyla güncellendi.';
+    setTimeout(()=>{profileMessage.innerText='';}, 3000);
+    oldPassword.value=''; newPassword.value='';
+  }catch(err){profileMessage.innerText='Hata oluştu: '+err.message;}
+});
+
+document.querySelectorAll('.togglePassword').forEach(icon=>{
+  icon.addEventListener('click', ()=>{
+    const input = document.getElementById(icon.dataset.target);
+    input.type = input.type === 'password' ? 'text' : 'password';
+  });
+});
+const securityStatus = document.getElementById("securityStatus");
+
+// ===== GÜVENLİK DURUMU =====
+async function loadSecurityStatus() {
+if(!db) return;
+  try {
+    const snapshot = await get(ref(db, 'nobetRecords'));
+    const val = snapshot.val();
+    securityStatus.innerHTML = '';
+    if (!val) {
+      securityStatus.innerText = 'Şu anda nöbette güvenlik yok.';
+      return;
+    }
+
+    const entries = Object.entries(val).filter(([k, r]) => r.status === 'started');
+    if (entries.length === 0) {
+      securityStatus.innerText = 'Şu anda nöbette güvenlik yok.';
+      return;
+    }
+
+    for (const [key, record] of entries) {
+      const userSnap = await get(ref(db, 'users/' + record.startBy));
+      if (!userSnap.exists()) continue;
+      const phone = userSnap.val()?.phone || '';
+
+      const div = document.createElement('div');
+      div.style.padding = '10px';
+      div.style.margin = '10px 0';
+      div.style.background = 'rgba(0,0,0,0.25)';
+      div.style.borderRadius = '12px';
+      div.style.display = 'flex';
+      div.style.alignItems = 'center';
+      div.style.justifyContent = 'space-between';
+      div.style.transition = 'all 0.3s ease';
+
+      div.innerHTML = `
+        🟢 ${record.startBy} Nöbette | ${record.shift} Vardiyası | ${record.startPoint} 
+        <button onclick="window.location.href='tel:${phone}'" style="margin-left:10px;padding:5px 10px;border-radius:8px;border:none;cursor:pointer;">📞Ara</button>
+      `;
+      securityStatus.appendChild(div);
+    }
+  } catch (err) {
+    securityStatus.innerText = 'Güvenlik durumu yüklenirken hata oluştu: ' + err.message;
+  }
+}
+let securityInterval = null;
+
+function startSecurityInterval(){
+  if(securityInterval) clearInterval(securityInterval);
+  securityInterval = setInterval(loadSecurityStatus, 30000);
+}
+
+
+window.guardsModal = document.getElementById("guardsModal");
+const guardsList = document.getElementById("guardsList");
+const guardSearch = document.getElementById("guardSearch");
+
+let allGuards = [];
+let activeGuards = {};
+async function loadAllGuards(){
+  if(!db) return;
+
+  allGuards = [];
+  activeGuards = {};
+
+  // 🔹 USERS
+  const usersSnap = await get(ref(db,"users"));
+  if(usersSnap.exists()){
+    const users = usersSnap.val();
+
+    for(const uid in users){
+      if(users[uid].type === "security" || users[uid].type === "admin"){
+        allGuards.push({
+          name: users[uid].name || uid,
+          phone: users[uid].phone || "",
+          type: users[uid].type
+        });
+      }
+    }
+  }
+
+  // 🔹 NÖBETTE OLANLAR
+  const nobetSnap = await get(ref(db,"nobetRecords"));
+  if(nobetSnap.exists()){
+    Object.values(nobetSnap.val()).forEach(r=>{
+      if(r.status === "started"){
+        activeGuards[r.startBy] = true;
+      }
+    });
+  }
+
+  renderGuards();
+}
+
+
+function renderGuards(){
+  guardsList.innerHTML = "";
+
+  const search = guardSearch.value.toLowerCase();
+
+const sortedGuards = [...allGuards].sort((a, b) => {
+  const aActive = activeGuards[a.name] ? 1 : 0;
+  const bActive = activeGuards[b.name] ? 1 : 0;
+  return bActive - aActive; // aktifler üste
+});
+
+sortedGuards.forEach(user=>{
+    if(search && !user.name.toLowerCase().includes(search)) return;
+
+    const isActive = activeGuards[user.name];
+    const roleText = user.type === "admin" ? "AMİR" : "GÜVENLİK";
+
+    const callBtn = user.phone
+      ? `<a href="tel:${user.phone}"
+           style="background:#27ae60;color:#fff;
+           padding:6px 10px;border-radius:8px;
+           text-decoration:none;font-size:13px;">
+           📞 Ara
+         </a>`
+      : `<span style="opacity:.4;font-size:13px;">📞 Numarası Yok</span>`;
+
+    const div = document.createElement("div");
+    div.style.padding = "12px";
+    div.style.marginBottom = "10px";
+    div.style.borderRadius = "12px";
+    div.style.background = "rgba(0,0,0,0.35)";
+    div.style.display = "flex";
+    div.style.justifyContent = "space-between";
+    div.style.alignItems = "center";
+
+    div.innerHTML = `
+      <div>
+        <strong>${user.name}</strong><br>
+        <span style="font-size:12px;opacity:.7;">${roleText}</span>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span>${isActive ? "🟢 Nöbette" : "🔴 Nöbette Değil"}</span>
+        ${callBtn}
+      </div>
+    `;
+
+    guardsList.appendChild(div);
+  });
+}
+
+guardSearch.addEventListener("input", renderGuards);
+
+// ===== EKSİK DEVRİYE BİLDİRİMLERİ (ŞİRKET PANELİ) =====
+const eksikDevriyeListesi = document.getElementById("eksikDevriyeListesi");
+
+let eksikListener = null;
+
+function loadEksikDevriyeler(){
+  if(!db) return;
+
+  const eksikRef = ref(db, "eksikdevriyebildirim");
+
+  // önce eski listener'ı kapat
+  if(eksikListener){
+    eksikListener();
+    eksikListener = null;
+  }
+
+  eksikListener = onValue(eksikRef, snapshot => {
+    const val = snapshot.val();
+    eksikDevriyeListesi.innerHTML = "";
+
+    if(!val){
+      eksikDevriyeListesi.innerText = "Henüz eksik devriye bildirimi yok.";
+      return;
+    }
+
+    let toplam = 0;
+
+    for(const devriyeId in val){
+      for(const bildiren in val[devriyeId]){
+        const d = val[devriyeId][bildiren];
+        toplam++;
+
+        const div = document.createElement("div");
+        div.className = "eksik-card";
+        div.innerHTML = `
+          <div class="eksik-row"><span class="label">Bildirim Yapan:</span><span class="value">${d.reportedBy}</span></div>
+          <div class="eksik-row"><span class="label">Tarih:</span><span class="value">${new Date(d.createdAt).toLocaleString("tr-TR")}</span></div>
+          <div class="eksik-row"><span class="label">Güvenlik:</span><span class="value">${d.guard}</span></div>
+          <div class="eksik-row"><span class="label">Saat:</span><span class="value">${d.start} – ${d.end}</span></div>
+          <div class="eksik-row"><span class="label">Eksik Noktalar:</span><span class="value">${(d.missingPoints||[]).join(", ")}</span></div>
+          <div class="eksik-actions">
+            <button class="eksik-sil-btn" onclick="silEksikDevriye('${devriyeId}','${bildiren}')">🗑️ Sil</button>
+          </div>
+        `;
+        eksikDevriyeListesi.appendChild(div);
+      }
+    }
+
+    if(toplam === 0){
+      eksikDevriyeListesi.innerText = "Henüz eksik devriye bildirimi yok.";
+    }
+  });
+}
+
+window.silEksikDevriye = async function(devriyeId, bildiren){
+const appConfirm = document.getElementById("appConfirm");
+const appConfirmYes = document.getElementById("appConfirmYes");
+const appConfirmNo = document.getElementById("appConfirmNo");
+
+  if(!confirm("Bu eksik devriye bildirimi silinsin mi?")) return;
+
+  try{
+    await update(
+      ref(db, `eksikdevriyebildirim/${devriyeId}`),
+      { [bildiren]: null }
+    );
+  }catch(err){
+    alert("Silme hatası: " + err.message);
+  }
+}
+
+
+window.tumEksikleriSil = function(){
+  appConfirm.style.display = "flex";
+};
+
+appConfirmNo.onclick = () => {
+  appConfirm.style.display = "none";
+};
+
+appConfirmYes.onclick = async () => {
+  appConfirm.style.display = "none";
+  try{
+    await remove(ref(db,"eksikdevriyebildirim"));
+  }catch(err){
+    alert("Toplu silme hatası: " + err.message);
+  }
+};
+
+
+
+</script>
+<div id="appConfirm" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  z-index:99999;
+  justify-content:center;
+  align-items:center;
+">
+  <div style="
+    background:#111;
+    padding:25px;
+    border-radius:18px;
+    width:90%;
+    max-width:360px;
+    text-align:center;
+    box-shadow:0 15px 40px rgba(0,0,0,0.8);
+  ">
+    <h3 style="color:#3498db;margin-bottom:10px;">Onay</h3>
+    <p style="font-size:14px;line-height:1.4;">
+      Tüm eksik devriye bildirimleri silinecek.<br>
+      Devam etmek istiyor musunuz?
+    </p>
+
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button id="appConfirmYes" style="
+        flex:1;
+        padding:10px;
+        border:none;
+        border-radius:12px;
+        background:#e74c3c;
+        color:#fff;
+        font-weight:700;
+        cursor:pointer;
+      ">Evet, Sil</button>
+
+      <button id="appConfirmNo" style="
+        flex:1;
+        padding:10px;
+        border:none;
+        border-radius:12px;
+        background:#2c3e50;
+        color:#fff;
+        font-weight:700;
+        cursor:pointer;
+      ">İptal</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+
