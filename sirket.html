@@ -1,730 +1,556 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Şirket</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-/* ===== GENEL ===== */
-body {margin:0; font-family:'Montserrat', sans-serif; background: linear-gradient(135deg,#0a1118,#1c1f26); color:#ecf0f1; overflow-x:hidden;}
-header {display:flex; justify-content:space-between; align-items:center; padding:20px 30px; background:#1b2838; box-shadow:0 10px 30px rgba(0,0,0,0.6); position:relative; border-bottom:2px solid #ffcc00;}
-header h1 {font-size:1.9rem; color:#ffcc00; margin:0; text-shadow:2px 2px 6px rgba(0,0,0,0.7); letter-spacing:1px;}
-.container {max-width:1000px; margin:40px auto; padding:20px;}
-.panel {background: rgba(255,255,255,0.08); padding:30px; border-radius:25px; box-shadow:0 12px 35px rgba(0,0,0,0.6); margin-top:20px; position:relative; transition: transform 0.3s ease, box-shadow 0.3s ease; backdrop-filter: blur(4px);}
-.panel:hover {transform: translateY(-4px); box-shadow:0 18px 50px rgba(0,0,0,0.8);}
-.panel h3 {text-align:center; margin-bottom:20px; font-weight:700; font-size:1.7rem; color:#ffd700; text-shadow:1px 1px 4px rgba(0,0,0,0.6);}
-.status div {display:flex; align-items:center; justify-content:space-between; transition: transform 0.3s ease, background 0.3s ease;}
-.status div:hover { transform: scale(1.02); background: rgba(0,0,0,0.25); }
-.action-btn {padding:18px 45px; font-size:1.25rem; font-weight:700; border:none; border-radius:25px; cursor:pointer; margin:10px; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(0,0,0,0.5);}
-.action-btn.green { background:linear-gradient(135deg,#2ecc71,#27ae60); color:#fff; }
-.action-btn.yellow { background:linear-gradient(135deg,#f1c40f,#f39c12); color:#000; }
-.action-btn.red { background:linear-gradient(135deg,#e74c3c,#c0392b); color:#fff; }
-.action-btn:hover { transform: translateY(-3px) scale(1.05); box-shadow:0 12px 30px rgba(0,0,0,0.7);}
-#profileModal {display:none; position:fixed; top:50%; left:50%; transform: translate(-50%,-50%); background: rgba(18,18,18,0.98); padding:30px; border-radius:25px; box-shadow:0 15px 50px rgba(0,0,0,0.8); z-index:9999; width:90%; max-width:450px; animation: fadeIn 0.4s ease forwards;}
-@keyframes fadeIn { from {opacity:0; transform:translate(-50%,-48%);} to {opacity:1; transform:translate(-50%,-50%);} }
-#profileModal h3 {text-align:center; margin-bottom:20px; font-size:1.8rem; color:#ffd700; text-shadow:1px 1px 3px rgba(0,0,0,0.7);}
-#profileModal label { display:block; margin-top:15px; font-size:14px; text-transform: uppercase; color:#ccc; }
-#profileModal input { width:100%; padding:12px; border-radius:15px; border:none; outline:none; margin-top:5px; background:#222f3e; color:#fff; transition:0.3s ease;}
-#profileModal input:focus { background:#2c3e50; box-shadow:0 0 8px #27ae60; }
-#profileModal button { margin-top:20px; padding:12px 18px; border-radius:15px; border:none; cursor:pointer; font-weight:700; transition:0.3s ease, transform 0.2s ease;}
-#updatePasswordBtn { background:linear-gradient(135deg,#2ecc71,#27ae60); color:#fff; }
-#updatePasswordBtn:hover { transform: scale(1.05); background:linear-gradient(135deg,#27ae60,#2ecc71); }
-#profileClose { position:absolute; top:15px; right:15px; cursor:pointer; font-size:24px; color:#fff; transition:0.3s ease, transform 0.2s ease;}
-#profileClose:hover { color:#ffcc00; transform:scale(1.2); }
-.togglePassword { position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CGA v1.01 | KOLART SECURITY</title>
 
-/* ===== SAĞ ÜST BUTONLAR ===== */
-.top-right-actions {
-    position: fixed;
-    top:20px;
-    right:25px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    z-index:1000;
-}
-#profileIcon {
-    width:40px;
-    height:40px;
-    font-size:22px;
-    border-radius:50%;
-    background: linear-gradient(135deg,#2ecc71,#27ae60);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    cursor:pointer;
-    box-shadow:0 8px 25px rgba(0,0,0,0.6);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-#profileIcon:hover { transform: scale(1.1); box-shadow:0 12px 30px rgba(0,0,0,0.8); }
+    <script>
+        (function() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            if (isMobile) { 
+                window.location.href = "sirketmobil.html"; 
+            }
+        })();
+    </script>
 
-#logoutBtn {
-    padding:10px 15px;
-    font-size:13px;
-    border-radius:12px;
-    background: linear-gradient(135deg,#e74c3c,#c0392b);
-    color:#fff;
-    border:none;
-    font-weight:700;
-    cursor:pointer;
-    box-shadow:0 8px 25px rgba(0,0,0,0.6);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-#logoutBtn:hover { transform: translateY(-2px); box-shadow:0 12px 30px rgba(0,0,0,0.8); }
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg: #050608;
+            --panel: #0f1115;
+            --accent: #eab308;
+            --accent-soft: rgba(234, 179, 8, 0.1);
+            --border: rgba(255, 255, 255, 0.06);
+            --text: #f8fafc;
+            --text-dim: #64748b;
+            --danger: #ff453a;
+            --success: #32d74b;
+            --sidebar-width: 280px;
+        }
 
-/* ===== TABLO ===== */
-#statusTable { width:100%; border-collapse: collapse; margin-top:20px; }
-#statusTable th, #statusTable td { border:1px solid rgba(255,255,255,0.3); padding:10px; text-align:center; }
-#statusTable th { background: rgba(255,255,255,0.1); color:#ffd700; }
-.bestUser { background: rgba(46,204,113,0.3); font-weight:700; }
-.worstUser { background: rgba(231,76,60,0.3); font-weight:700; }
-/* KARTLAR YAN YANA + KAREYE YAKIN */
+        * { margin: 0; padding: 0; box-sizing: border-box; transition: all 0.2s ease; }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh;
+            display: flex; 
+            flex-direction: column;
+            overflow-x: hidden;
+        }
 
+        /* --- HEADER (PC UYUMLU) --- */
+        header {
+            height: 70px; 
+            background: rgba(15, 17, 21, 0.95); 
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border); 
+            padding: 0 40px;
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            z-index: 100;
+            position: sticky;
+            top: 0;
+        }
 
-.eksik-card{
-  background: rgba(0,0,0,0.35);
-  padding:12px;
-  border-radius:14px;
-  border-left:4px solid #e74c3c;
+        .brand-zone { display: flex; align-items: center; gap: 15px; }
+        .kolart-logo { 
+            background: var(--accent); color: #000; padding: 8px 15px; border-radius: 8px;
+            font-weight: 900; font-size: 14px; letter-spacing: 0.5px; white-space: nowrap;
+        }
+        .brand-zone h1 { font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; }
 
-  display:flex;
-  flex-direction:column;
-  gap:4px;
+        .top-ctrl { display: flex; gap: 20px; align-items: center; }
+        #liveClock { font-family: 'JetBrains Mono'; font-weight: 600; color: var(--accent); font-size: 16px; border-right: 1px solid var(--border); padding-right: 20px; }
 
-  font-size:13px;
-}/* SADECE EKSİK DEVRİYE PANELİNİ KÜÇÜLT */
-.panel:nth-of-type(2){
-  padding:12px !important;
-}
+        .ctrl-btn { 
+            width: 40px; height: 40px; background: var(--panel); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .ctrl-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-/* KARTLARIN DURDUĞU ALAN */
-/* EKSİK DEVRİYE KART ALANI – 3 KART */
-#eksikDevriyeListesi{
-  display:grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 kart */
-  gap:16px;
-  padding:10px 0;
-  background: transparent;
-}
-@media (max-width: 900px){
-  #eksikDevriyeListesi{
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
+        .btn-exit { 
+            background: rgba(255, 69, 58, 0.1); border: 1px solid rgba(255, 69, 58, 0.2); 
+            color: var(--danger); height: 40px; padding: 0 15px; border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-exit:hover { background: var(--danger); color: white; }
 
-@media (max-width: 500px){
-  #eksikDevriyeListesi{
-    grid-template-columns: 1fr;
-  }
-}
+        /* --- ANA TASARIM (PC) --- */
+        .wrapper { 
+            width: 100%; 
+            max-width: 1600px; 
+            margin: 0 auto; 
+            padding: 30px 40px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 25px; 
+            flex: 1; 
+        }
 
+        .welcome-panel { margin-bottom: 10px; }
+        .welcome-panel h2 { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+        .welcome-panel p { color: var(--accent); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
 
-/* KAREYE YAKIN KART */
-.eksik-card{
-  background: rgba(0,0,0,0.4);
-  padding:12px;
-  border-radius:14px;
-  border-left:4px solid #e74c3c;
+        .master-selector {
+            background: var(--panel); border: 1px solid var(--border); padding: 25px; border-radius: 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        #siteSelect {
+            background: #000; border: 1px solid var(--border); color: var(--accent);
+            padding: 15px 25px; border-radius: 12px; font-weight: 700; font-size: 16px; outline: none; min-width: 400px;
+            cursor: pointer;
+        }
 
-  display:flex;
-  flex-direction:column;
-  gap:6px;
+        /* --- DASHBOARD GRID --- */
+        .dash-content {
+            display: grid; 
+            grid-template-columns: 1fr 400px; 
+            gap: 30px;
+            align-items: start;
+        }
 
-  font-size:13px;
-  min-height:unset;
-}
-/* EKSİK DEVRİYE KART İÇİ TABLO DÜZENİ */
-.eksik-table{
-  display:grid;
-  grid-template-columns: 140px 1fr;
-  row-gap:8px;
-  column-gap:10px;
-  font-size:13px;
-}
+        .panel-box { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 25px; }
+        .p-label { font-size: 11px; font-weight: 800; color: var(--text-dim); letter-spacing: 1.5px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .p-label i { color: var(--accent); }
 
-.eksik-table .etiket{
-  color:#f1c40f;
-  font-weight:600;
-  white-space:nowrap;
-}
+        /* --- STAFF CARDS (PC'DE YAN YANA 3'LÜ) --- */
+        .live-nobet { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
 
-.eksik-table .deger{
-  color:#ecf0f1;
-  font-weight:500;
-  word-break:break-word;
-}
-/* EKSİK DEVRİYE BAŞLIKLARI RENK */
-.label{
-  color:#f1c40f;       /* başlık rengi (sarı) */
-  font-weight:600;
-  white-space:nowrap; /* başlık satır kırmasın */
-}
+        .guard-card {
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 20px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .guard-card:hover { border-color: var(--accent-soft); background: rgba(234, 179, 8, 0.03); transform: translateY(-3px); }
 
-.value{
-  color:#ecf0f1;       /* değer rengi */
-  font-weight:500;
-}
-.eksik-actions{
-  margin-top:8px;
-  display:flex;
-  justify-content:flex-end;
-}
+        .g-data b { font-size: 16px; display: block; margin-bottom: 4px; }
+        .g-data span { font-size: 12px; color: var(--text-dim); font-family: 'JetBrains Mono'; }
+        
+        .g-call { 
+            background: var(--success); color: #000; padding: 10px 15px; border-radius: 10px; 
+            font-size: 11px; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
 
-.eksik-sil-btn{
-  background:#c0392b;
-  color:#fff;
-  border:none;
-  padding:6px 10px;
-  border-radius:8px;
-  font-size:12px;
-  cursor:pointer;
-  font-weight:600;
-  transition:0.3s;
-}
+        /* --- ACTIONS GRID --- */
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .act-card {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+            padding: 25px 15px; text-align: center; text-decoration: none; color: inherit; cursor: pointer;
+        }
+        .act-card:hover { border-color: var(--accent); background: var(--accent-soft); transform: scale(1.02); }
+        .act-card i { font-size: 24px; color: var(--accent); margin-bottom: 12px; display: block; }
+        .act-card span { font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; }
 
-.eksik-sil-btn:hover{
-  background:#e74c3c;
-  transform:scale(1.05);
-}
+        /* --- TABLE STYLE --- */
+        .table-container { width: 100%; overflow: hidden; border-radius: 20px; background: var(--panel); border: 1px solid var(--border); }
+        .v-table { width: 100%; border-collapse: collapse; }
+        .v-table th { background: rgba(255,255,255,0.02); text-align: left; font-size: 10px; color: var(--text-dim); padding: 18px; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+        .v-table td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .v-table tr:hover { background: rgba(255,255,255,0.01); }
 
+        /* MODAL */
+        .cga-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-content {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 25px;
+            width: 100%; max-width: 500px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
 
-
-
-
-
-</style>
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--panel); border-radius: 10px; border: 2px solid var(--bg); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+    </style>
 </head>
 <body>
 
 <header>
-  <h1>Şirket</h1>
+    <div class="brand-zone">
+        <div class="kolart-logo">KOLART GÜVENLİK</div>
+        <h1>CGA v1.01</h1>
+    </div>
+    <div class="top-ctrl">
+        <div id="liveClock">00:00:00</div>
+        <button class="ctrl-btn" id="profileIcon" title="Profil Ayarları"><i class="fas fa-user-shield"></i></button>
+        <button class="btn-exit" id="logoutBtn"><i class="fas fa-power-off"></i> SİSTEMDEN ÇIKIŞ</button>
+    </div>
 </header>
 
-<div class="top-right-actions">
-  <div id="profileIcon" title="Profil">👤</div>
-  <button id="logoutBtn" title="Çıkış">Çıkış</button>
-</div>
-<div style="max-width:320px;margin:25px auto;">
-  <select id="siteSelect" style="
-    width:100%;
-    padding:12px;
-    border-radius:14px;
-    background:#1b2838;
-    color:#fff;
-    border:2px solid #ffd700;
-    font-weight:700;
-  ">
-    <option value="">Proje Seçiniz</option>
-  </select>
-</div>
-<div class="container">
-  <div class="panel">
-    <h3>Güvenlik Durumu</h3>
-    <div id="securityStatus" class="status">Yükleniyor...</div>
-  </div>
-
-
-
-
-
-  <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-top:30px;">
-<button class="action-btn green" onclick="goPage('olaylar.html')">Olay Takip</button>
- <button class="action-btn yellow" onclick="goPage('tamam.html')">Nöbet Takip</button>
-<button class="action-btn red" onclick="goPage('takip.html')">Devriye Takip</button>
-    <button class="action-btn" style="background:#3498db;color:#fff;" id="statusBtn">TÜM PERSONEL</button>
-  </div>
-</div>
-<div class="panel">
-
-  <h3 class="panel-title panel-header">
-    <span>Eksik Devriye Bildirimleri</span>
-
-    <button class="toplu-sil-btn" onclick="tumEksikleriSil()">
-      🗑️ Tümünü Sil
-    </button>
-  </h3>
-
-  <div id="eksikDevriyeListesi" class="status">
-    Yükleniyor...
-  </div>
-
-</div>
-
-<!-- PROFİL MODAL -->
-<div id="profileModal">
-  <span id="profileClose">✖</span>
-  <h3>Profil</h3>
-  <label>Kullanıcı Adı (değiştirilemez)</label>
-  <input type="text" id="profileUsername" disabled>
-  <label>ESKİ ŞİFRE</label>
-  <div style="position:relative;">
-    <input type="password" id="oldPassword" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
-    <span class="togglePassword" data-target="oldPassword">👀</span>
-  </div>
-  <label>YENİ ŞİFRE</label>
-  <div style="position:relative;">
-    <input type="password" id="newPassword" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
-    <span class="togglePassword" data-target="newPassword">👀</span>
-  </div>
-  <button id="updatePasswordBtn">Şifreyi Güncelle</button>
-  <div id="profileMessage" style="margin-top:10px;font-size:14px;"></div>
-</div>
-
-<!-- TÜM GÜVENLİKLER MODAL -->
-<div id="guardsModal" style="display:none;position:fixed;top:50%;left:50%;
-transform:translate(-50%,-50%);
-background:rgba(18,18,18,0.98);
-padding:25px;
-border-radius:25px;
-box-shadow:0 15px 50px rgba(0,0,0,0.8);
-z-index:9999;
-width:90%;
-max-width:700px;
-max-height:90%;
-overflow:auto;">
-
-  <h3 style="text-align:center;color:#ffd700;">Tüm Güvenlikler</h3>
-
-  <input id="guardSearch" placeholder="Güvenlik ara..."
-    style="width:100%;padding:12px;border-radius:12px;
-    border:none;margin-bottom:15px;background:#1b2838;color:#fff;">
-
-  <div id="guardsList"></div>
-
-  <button onclick="guardsModal.style.display='none'"
-    style="margin-top:20px;padding:12px;border-radius:12px;
-    border:none;background:#c0392b;color:#fff;width:100%;font-weight:700;">
-    Kapat
-  </button>
-</div>
-
-<script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getDatabase, ref, onValue, get, update, remove } 
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-
-// 🔵 MERKEZ FIREBASE
-const merkezConfig = {
-apiKey: "AIzaSyAM5NHBpRHIlttNXwJ9YKDypR4eoyQbDeM",
-  authDomain: "kolartguvenlik-e002d.firebaseapp.com",
-  databaseURL: "https://kolartguvenlik-e002d-default-rtdb.firebaseio.com",
-  projectId: "kolartguvenlik-e002d",
-  storageBucket: "kolartguvenlik-e002d.firebasestorage.app",
-  messagingSenderId: "212955174898",
-  appId: "1:212955174898:web:f77501991c1648fb66bd6b",
-  measurementId: "G-TCGDNDYY6Y"
-};
-
-const merkezApp = initializeApp(merkezConfig, "merkez");
-const merkezDB = getDatabase(merkezApp);
-
-const siteSelect = document.getElementById("siteSelect");
-document.getElementById("statusBtn").addEventListener("click", () => {
-  loadAllGuards();              // güvenlikleri çek
-  guardsModal.style.display = "block"; // modal aç
-});
-
-onValue(ref(merkezDB, "sites"), snap => {
-  siteSelect.innerHTML = `<option value="">Proje Seçiniz</option>`;
-  const val = snap.val();
-  if(!val) return;
-
-  for(const siteId in val){
-    const opt = document.createElement("option");
-    opt.value = siteId;
-    opt.textContent = val[siteId].siteName;
-    siteSelect.appendChild(opt);
-  }
-});
-let app = null;
-let db = null;
-window.goPage = function(page){
-  if(!siteSelect.value){
-    alert("Lütfen önce bir proje seçiniz.");
-    return;
-  }
-
-  // seçili siteyi sakla
-  sessionStorage.setItem("selectedSiteId", siteSelect.value);
-
-  // yönlendir
-  window.location.href = page;
-};
-
-siteSelect.addEventListener("change", async () => {
-  const siteId = siteSelect.value;
-  if (!siteId) return;
-
-  // seçimi sakla
-  localStorage.setItem("selectedSiteId", siteId);
-
-  // eski verileri temizle
-  securityStatus.innerHTML = "Yükleniyor...";
-  eksikDevriyeListesi.innerHTML = "Yükleniyor...";
-  if (securityInterval) clearInterval(securityInterval);
-
-  // Firebase config yükle
-  const snap = await get(ref(merkezDB, `sites/${siteId}/config`));
-  if (!snap.exists()) {
-    alert("Site Firebase bilgisi bulunamadı!");
-    return;
-  }
-
-  const config = snap.val();
-
-  if (!getApps().some(a => a.name === siteId)) {
-    app = initializeApp(config, siteId);
-  } else {
-    app = getApps().find(a => a.name === siteId);
-  }
-
-  db = getDatabase(app);
-
-  loadSecurityStatus();
-  startSecurityInterval();
-  loadEksikDevriyeler();
-});
-
-
-
-let storedUser = sessionStorage.getItem("currentUser");
-let currentUser = storedUser ? JSON.parse(storedUser).username : null;
-let cameFrom = storedUser ? JSON.parse(storedUser).cameFrom : null;
-if(!currentUser){ alert("Lütfen önce giriş yapın!"); window.location.href="index.html"; }
-
-const profileModal=document.getElementById("profileModal"),
-      profileIcon=document.getElementById("profileIcon"),
-      profileClose=document.getElementById("profileClose"),
-      profileUsername=document.getElementById("profileUsername"),
-      oldPassword=document.getElementById("oldPassword"),
-      newPassword=document.getElementById("newPassword"),
-      updatePasswordBtn=document.getElementById("updatePasswordBtn"),
-      profileMessage=document.getElementById("profileMessage"),
-      logoutBtn=document.getElementById("logoutBtn");
-
-profileUsername.value=currentUser;
-profileIcon.addEventListener('click',()=>{profileModal.style.display='block';});
-profileClose.addEventListener('click',()=>{profileModal.style.display='none';});
-
-logoutBtn.addEventListener('click',()=>{ 
-    sessionStorage.removeItem("currentUser");
-    if(cameFrom==='sirket') window.location.href='sirket.html';
-    else window.location.href='index.html';
-});
-
-updatePasswordBtn.addEventListener('click',async()=>{
-  profileMessage.innerText='';
-  const oldPwd=oldPassword.value; const newPwd=newPassword.value;
-  if(!oldPwd||!newPwd){profileMessage.innerText='Lütfen eski ve yeni şifreyi giriniz.'; return;}
-  try{
-    const snapshot=await get(ref(db,'users/'+currentUser));
-    if(!snapshot.exists()){profileMessage.innerText='Kullanıcı bulunamadı.'; return;}
-    const userData=snapshot.val();
-    if(userData.password!==oldPwd){profileMessage.innerText='Eski şifre hatalı.'; return;}
-    await update(ref(db,'users/'+currentUser),{password:newPwd});
-    profileMessage.innerText='Şifre başarıyla güncellendi.';
-    setTimeout(()=>{profileMessage.innerText='';}, 3000);
-    oldPassword.value=''; newPassword.value='';
-  }catch(err){profileMessage.innerText='Hata oluştu: '+err.message;}
-});
-
-document.querySelectorAll('.togglePassword').forEach(icon=>{
-  icon.addEventListener('click', ()=>{
-    const input = document.getElementById(icon.dataset.target);
-    input.type = input.type === 'password' ? 'text' : 'password';
-  });
-});
-const securityStatus = document.getElementById("securityStatus");
-
-// ===== GÜVENLİK DURUMU =====
-async function loadSecurityStatus() {
-if(!db) return;
-  try {
-    const snapshot = await get(ref(db, 'nobetRecords'));
-    const val = snapshot.val();
-    securityStatus.innerHTML = '';
-    if (!val) {
-      securityStatus.innerText = 'Şu anda nöbette güvenlik yok.';
-      return;
-    }
-
-    const entries = Object.entries(val).filter(([k, r]) => r.status === 'started');
-    if (entries.length === 0) {
-      securityStatus.innerText = 'Şu anda nöbette güvenlik yok.';
-      return;
-    }
-
-    for (const [key, record] of entries) {
-      const userSnap = await get(ref(db, 'users/' + record.startBy));
-      if (!userSnap.exists()) continue;
-      const phone = userSnap.val()?.phone || '';
-
-      const div = document.createElement('div');
-      div.style.padding = '10px';
-      div.style.margin = '10px 0';
-      div.style.background = 'rgba(0,0,0,0.25)';
-      div.style.borderRadius = '12px';
-      div.style.display = 'flex';
-      div.style.alignItems = 'center';
-      div.style.justifyContent = 'space-between';
-      div.style.transition = 'all 0.3s ease';
-
-      div.innerHTML = `
-        🟢 ${record.startBy} Nöbette | ${record.shift} Vardiyası | ${record.startPoint} 
-        <button onclick="window.location.href='tel:${phone}'" style="margin-left:10px;padding:5px 10px;border-radius:8px;border:none;cursor:pointer;">📞Ara</button>
-      `;
-      securityStatus.appendChild(div);
-    }
-  } catch (err) {
-    securityStatus.innerText = 'Güvenlik durumu yüklenirken hata oluştu: ' + err.message;
-  }
-}
-let securityInterval = null;
-
-function startSecurityInterval(){
-  if(securityInterval) clearInterval(securityInterval);
-  securityInterval = setInterval(loadSecurityStatus, 30000);
-}
-
-
-window.guardsModal = document.getElementById("guardsModal");
-const guardsList = document.getElementById("guardsList");
-const guardSearch = document.getElementById("guardSearch");
-
-let allGuards = [];
-let activeGuards = {};
-async function loadAllGuards(){
-  if(!db) return;
-
-  allGuards = [];
-  activeGuards = {};
-
-  // 🔹 USERS
-  const usersSnap = await get(ref(db,"users"));
-  if(usersSnap.exists()){
-    const users = usersSnap.val();
-
-    for(const uid in users){
-      if(users[uid].type === "security" || users[uid].type === "admin"){
-        allGuards.push({
-          name: users[uid].name || uid,
-          phone: users[uid].phone || "",
-          type: users[uid].type
-        });
-      }
-    }
-  }
-
-  // 🔹 NÖBETTE OLANLAR
-  const nobetSnap = await get(ref(db,"nobetRecords"));
-  if(nobetSnap.exists()){
-    Object.values(nobetSnap.val()).forEach(r=>{
-      if(r.status === "started"){
-        activeGuards[r.startBy] = true;
-      }
-    });
-  }
-
-  renderGuards();
-}
-
-
-function renderGuards(){
-  guardsList.innerHTML = "";
-
-  const search = guardSearch.value.toLowerCase();
-
-const sortedGuards = [...allGuards].sort((a, b) => {
-  const aActive = activeGuards[a.name] ? 1 : 0;
-  const bActive = activeGuards[b.name] ? 1 : 0;
-  return bActive - aActive; // aktifler üste
-});
-
-sortedGuards.forEach(user=>{
-    if(search && !user.name.toLowerCase().includes(search)) return;
-
-    const isActive = activeGuards[user.name];
-    const roleText = user.type === "admin" ? "AMİR" : "GÜVENLİK";
-
-    const callBtn = user.phone
-      ? `<a href="tel:${user.phone}"
-           style="background:#27ae60;color:#fff;
-           padding:6px 10px;border-radius:8px;
-           text-decoration:none;font-size:13px;">
-           📞 Ara
-         </a>`
-      : `<span style="opacity:.4;font-size:13px;">📞 Numarası Yok</span>`;
-
-    const div = document.createElement("div");
-    div.style.padding = "12px";
-    div.style.marginBottom = "10px";
-    div.style.borderRadius = "12px";
-    div.style.background = "rgba(0,0,0,0.35)";
-    div.style.display = "flex";
-    div.style.justifyContent = "space-between";
-    div.style.alignItems = "center";
-
-    div.innerHTML = `
-      <div>
-        <strong>${user.name}</strong><br>
-        <span style="font-size:12px;opacity:.7;">${roleText}</span>
-      </div>
-
-      <div style="display:flex;gap:10px;align-items:center;">
-        <span>${isActive ? "🟢 Nöbette" : "🔴 Nöbette Değil"}</span>
-        ${callBtn}
-      </div>
-    `;
-
-    guardsList.appendChild(div);
-  });
-}
-
-guardSearch.addEventListener("input", renderGuards);
-
-// ===== EKSİK DEVRİYE BİLDİRİMLERİ (ŞİRKET PANELİ) =====
-const eksikDevriyeListesi = document.getElementById("eksikDevriyeListesi");
-
-let eksikListener = null;
-
-function loadEksikDevriyeler(){
-  if(!db) return;
-
-  const eksikRef = ref(db, "eksikdevriyebildirim");
-
-  // önce eski listener'ı kapat
-  if(eksikListener){
-    eksikListener();
-    eksikListener = null;
-  }
-
-  eksikListener = onValue(eksikRef, snapshot => {
-    const val = snapshot.val();
-    eksikDevriyeListesi.innerHTML = "";
-
-    if(!val){
-      eksikDevriyeListesi.innerText = "Henüz eksik devriye bildirimi yok.";
-      return;
-    }
-
-    let toplam = 0;
-
-    for(const devriyeId in val){
-      for(const bildiren in val[devriyeId]){
-        const d = val[devriyeId][bildiren];
-        toplam++;
-
-        const div = document.createElement("div");
-        div.className = "eksik-card";
-        div.innerHTML = `
-          <div class="eksik-row"><span class="label">Bildirim Yapan:</span><span class="value">${d.reportedBy}</span></div>
-          <div class="eksik-row"><span class="label">Tarih:</span><span class="value">${new Date(d.createdAt).toLocaleString("tr-TR")}</span></div>
-          <div class="eksik-row"><span class="label">Güvenlik:</span><span class="value">${d.guard}</span></div>
-          <div class="eksik-row"><span class="label">Saat:</span><span class="value">${d.start} – ${d.end}</span></div>
-          <div class="eksik-row"><span class="label">Eksik Noktalar:</span><span class="value">${(d.missingPoints||[]).join(", ")}</span></div>
-          <div class="eksik-actions">
-            <button class="eksik-sil-btn" onclick="silEksikDevriye('${devriyeId}','${bildiren}')">🗑️ Sil</button>
-          </div>
-        `;
-        eksikDevriyeListesi.appendChild(div);
-      }
-    }
-
-    if(toplam === 0){
-      eksikDevriyeListesi.innerText = "Henüz eksik devriye bildirimi yok.";
-    }
-  });
-}
-
-window.silEksikDevriye = async function(devriyeId, bildiren){
-const appConfirm = document.getElementById("appConfirm");
-const appConfirmYes = document.getElementById("appConfirmYes");
-const appConfirmNo = document.getElementById("appConfirmNo");
-
-  if(!confirm("Bu eksik devriye bildirimi silinsin mi?")) return;
-
-  try{
-    await update(
-      ref(db, `eksikdevriyebildirim/${devriyeId}`),
-      { [bildiren]: null }
-    );
-  }catch(err){
-    alert("Silme hatası: " + err.message);
-  }
-}
-
-
-window.tumEksikleriSil = function(){
-  appConfirm.style.display = "flex";
-};
-
-appConfirmNo.onclick = () => {
-  appConfirm.style.display = "none";
-};
-
-appConfirmYes.onclick = async () => {
-  appConfirm.style.display = "none";
-  try{
-    await remove(ref(db,"eksikdevriyebildirim"));
-  }catch(err){
-    alert("Toplu silme hatası: " + err.message);
-  }
-};
-
-
-
-</script>
-<div id="appConfirm" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.7);
-  z-index:99999;
-  justify-content:center;
-  align-items:center;
-">
-  <div style="
-    background:#111;
-    padding:25px;
-    border-radius:18px;
-    width:90%;
-    max-width:360px;
-    text-align:center;
-    box-shadow:0 15px 40px rgba(0,0,0,0.8);
-  ">
-    <h3 style="color:#3498db;margin-bottom:10px;">Onay</h3>
-    <p style="font-size:14px;line-height:1.4;">
-      Tüm eksik devriye bildirimleri silinecek.<br>
-      Devam etmek istiyor musunuz?
-    </p>
-
-    <div style="display:flex;gap:10px;margin-top:20px;">
-      <button id="appConfirmYes" style="
-        flex:1;
-        padding:10px;
-        border:none;
-        border-radius:12px;
-        background:#e74c3c;
-        color:#fff;
-        font-weight:700;
-        cursor:pointer;
-      ">Evet, Sil</button>
-
-      <button id="appConfirmNo" style="
-        flex:1;
-        padding:10px;
-        border:none;
-        border-radius:12px;
-        background:#2c3e50;
-        color:#fff;
-        font-weight:700;
-        cursor:pointer;
-      ">İptal</button>
+<div class="wrapper">
+    <div class="welcome-panel">
+        <h2 id="welcomeMsg">Yükleniyor...</h2>
+        <p>Proje Yönetim & Güvenlik Operasyon Merkezi</p>
     </div>
-  </div>
+
+    <div class="master-selector">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div class="ctrl-btn" style="background: var(--accent); color: #000; border: none;"><i class="fas fa-building-shield"></i></div>
+            <div>
+                <p style="font-size: 10px; color: var(--text-dim); margin-bottom: 4px; font-weight: 800; letter-spacing: 1px;">YÖNETİLECEK PROJEYİ SEÇİN</p>
+                <select id="siteSelect">
+                    <option value="">VERİLER SENKRONİZE EDİLİYOR...</option>
+                </select>
+            </div>
+        </div>
+        <div id="connectionStatus" style="font-size: 11px; color: var(--text-dim); font-weight: 800; background: rgba(255,255,255,0.03); padding: 10px 20px; border-radius: 10px; border: 1px solid var(--border);">
+            <i class="fas fa-circle" style="margin-right: 8px;"></i> SİSTEM DURUMU: BAĞLANTI YOK
+        </div>
+    </div>
+
+    <div class="dash-content">
+        <div class="left-pane">
+            <div class="p-label"><i class="fas fa-users-viewfinder"></i> AKTİF NÖBETTEKİ PERSONEL DURUMU</div>
+            <div id="securityStatus" class="live-nobet">
+                <div style="text-align: center; padding: 40px; color: var(--text-dim); font-size: 14px; width: 100%; border: 1px dashed var(--border); border-radius: 20px;">
+                    <i class="fas fa-arrow-up" style="display: block; font-size: 30px; margin-bottom: 15px;"></i>
+                    Lütfen yukarıdan bir bölge seçiniz...
+                </div>
+            </div>
+
+            <div class="p-label" style="margin-top: 40px;"><i class="fas fa-triangle-exclamation"></i> EKSİK DEVRİYE VE İHLAL BİLDİRİMLERİ</div>
+            <div class="table-container">
+                <table class="v-table">
+                    <thead>
+                        <tr>
+                            <th>PERSONEL / BİLDİREN</th>
+                            <th>DEVRİYE SAATLERİ</th>
+                            <th style="text-align: center;">İHLAL DURUMU</th>
+                            <th style="text-align: right;">İŞLEM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eksikDevriyeListesi"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="right-pane">
+            <div class="p-label"><i class="fas fa-rocket"></i> HIZLI ERİŞİM PANELİ</div>
+            <div class="action-grid">
+                <div onclick="goPage('olaylar.html')" class="act-card">
+                    <i class="fas fa-file-shield"></i>
+                    <span>OLAY TAKİBİ</span>
+                </div>
+                <div onclick="goPage('takip.html')" class="act-card">
+                    <i class="fas fa-box-archive"></i>
+                    <span>DEVRİYE ARŞİVİ</span>
+                </div>
+                <div onclick="goPage('tamam.html')" class="act-card">
+                    <i class="fas fa-clock-rotate-left"></i>
+                    <span>NÖBET GEÇMİŞİ</span>
+                </div>
+                <div id="statusBtn" class="act-card">
+                    <i class="fas fa-address-book"></i>
+                    <span>PERSONEL REHBERİ</span>
+                </div>
+            </div>
+
+            <div class="panel-box" style="margin-top: 30px; border-color: rgba(255, 69, 58, 0.2);">
+                <div class="p-label" style="color: var(--danger);"><i class="fas fa-shield-slash"></i> TEHLİKELİ ALAN</div>
+                <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 15px;">Tüm eksik devriye kayıtlarını kalıcı olarak temizler.</p>
+                <button id="resetIhlalBtn" style="width: 100%; background: rgba(255, 69, 58, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 15px; border-radius: 12px; font-size: 11px; font-weight: 800; cursor: pointer;">LİSTEYİ TAMAMEN SIFIRLA</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div id="cgaModal" class="cga-modal">
+    <div class="modal-content" id="modalBody"></div>
+</div>
+
+
+ <script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getDatabase, ref, onValue, get, update, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+const configBase = {
+    apiKey: "AIzaSyAM5NHBpRHIlttNXwJ9YKDypR4eoyQbDeM",
+    authDomain: "kolartguvenlik-e002d.firebaseapp.com",
+    databaseURL: "https://kolartguvenlik-e002d-default-rtdb.firebaseio.com",
+    projectId: "kolartguvenlik-e002d"
+};
+
+const mApp = initializeApp(configBase, "master");
+const mDB = getDatabase(mApp);
+const siteSelect = document.getElementById("siteSelect");
+const modal = document.getElementById("cgaModal");
+const modalBody = document.getElementById("modalBody");
+let db = null;
+
+// --- CGA MODAL ENGINE (Alert/Confirm Replacement) ---
+window.cgaAlert = (msg) => {
+    modalBody.innerHTML = `
+        <div style="text-align:center;">
+            <i class="fas fa-info-circle" style="font-size:40px; color:var(--accent); margin-bottom:15px;"></i>
+            <p style="font-weight:700; margin-bottom:20px;">${msg}</p>
+            <button onclick="document.getElementById('cgaModal').style.display='none'" style="width:100%; background:var(--accent); color:#000; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">TAMAM</button>
+        </div>`;
+    modal.style.display = "flex";
+};
+
+window.cgaConfirm = (msg, onConfirm) => {
+    modalBody.innerHTML = `
+        <div style="text-align:center;">
+            <i class="fas fa-exclamation-triangle" style="font-size:40px; color:var(--danger); margin-bottom:15px;"></i>
+            <p style="font-weight:700; margin-bottom:20px;">${msg}</p>
+            <div style="display:flex; gap:10px;">
+                <button id="modalNo" style="flex:1; background:var(--border); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">İPTAL</button>
+                <button id="modalYes" style="flex:1; background:var(--danger); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">ONAYLA</button>
+            </div>
+        </div>`;
+    modal.style.display = "flex";
+    document.getElementById("modalNo").onclick = () => modal.style.display = "none";
+    document.getElementById("modalYes").onclick = () => { modal.style.display = "none"; onConfirm(); };
+};
+
+// --- CORE LOGIC ---
+setInterval(() => { 
+    document.getElementById("liveClock").innerText = new Date().toLocaleTimeString('tr-TR'); 
+    updateShiftTimers();
+}, 1000);
+
+function updateShiftTimers() {
+    const timers = document.querySelectorAll('.live-timer');
+    timers.forEach(t => {
+        const start = parseInt(t.dataset.start);
+        const diff = Math.floor((Date.now() - start) / 1000);
+        const h = Math.floor(diff / 3600);
+        const m = Math.floor((diff % 3600) / 60);
+        const s = diff % 60;
+        t.innerText = `${h} sa ${m} dk ${s} sn`;
+    });
+}
+
+const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || '{"username":"OPERATÖR"}');
+document.getElementById("welcomeMsg").innerText = `Hoş Geldiniz, ${currentUser.username}`;
+
+onValue(ref(mDB, "sites"), async snap => {
+    siteSelect.innerHTML = `<option value="">PROJE SEÇİNİZ</option>`;
+    const data = snap.val();
+    if(!data) return;
+    for(let id in data) {
+        let opt = document.createElement("option");
+        opt.value = id; opt.textContent = data[id].siteName.toUpperCase();
+        siteSelect.appendChild(opt);
+    }
+    const last = localStorage.getItem("cga_node_v5");
+    if(last && data[last]) { siteSelect.value = last; connect(last); }
+});
+
+async function connect(id) {
+    if(!id) return;
+    localStorage.setItem("cga_node_v5", id);
+    sessionStorage.setItem("selectedSiteId", id);
+    const snap = await get(ref(mDB, `sites/${id}/config`));
+    if(!snap.exists()) return;
+    const app = !getApps().some(a => a.name === id) ? initializeApp(snap.val(), id) : getApps().find(a => a.name === id);
+    db = getDatabase(app);
+    document.getElementById("connectionStatus").innerHTML = `<i class="fas fa-circle" style="color:var(--success)"></i> SİSTEM ÇEVRİMİÇİ`;
+    syncData();
+}
+
+siteSelect.onchange = (e) => connect(e.target.value);
+
+function syncData() {
+    onValue(ref(db, 'nobetRecords'), async snap => {
+        const div = document.getElementById("securityStatus");
+        div.innerHTML = "";
+        const val = snap.val();
+        if(!val) return div.innerHTML = "<div style='grid-column: 1/-1; text-align: center; padding: 20px; color: var(--text-dim);'>Aktif personel yok.</div>";
+        const active = Object.values(val).filter(r => r.status === 'started');
+        if(active.length === 0) div.innerHTML = "<div style='grid-column: 1/-1; text-align: center; padding: 20px; color: var(--text-dim);'>Şu an nöbette kimse yok.</div>";
+        for(let r of active) {
+            const userRef = await get(ref(db, 'users/'+r.startBy));
+            const phone = userRef.val()?.phone || "";
+            const startTime = new Date(r.startTime).getTime();
+            div.innerHTML += `
+                <div class="guard-card">
+                    <div class="g-data">
+                        <b>${r.startBy.toUpperCase()}</b>
+                        <span>${r.shift} • ${r.startPoint}</span>
+                        <span class="live-timer" data-start="${startTime}" style="color:var(--accent); font-weight:800; display:block; margin-top:5px;">Hesaplanıyor...</span>
+                    </div>
+                    <a href="tel:${phone}" class="g-call"><i class="fas fa-phone"></i> ARA</a>
+                </div>`;
+        }
+    });
+
+    onValue(ref(db, "eksikdevriyebildirim"), snap => {
+        const list = document.getElementById("eksikDevriyeListesi");
+        list.innerHTML = "";
+        const val = snap.val();
+        if(!val) return list.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:30px; color:var(--text-dim);'>EKSİK DEVRİYE BİLDİRİMİ YOK</td></tr>";
+        for(let dId in val) {
+            for(let bId in val[dId]) {
+                let d = val[dId][bId];
+                const missingCount = d.missingPoints ? d.missingPoints.length : 0;
+                const pointsData = JSON.stringify(d.missingPoints || []);
+                const gonderen = d.reportedBy || "SİSTEM";
+                const personel = d.guard || "BELİRSİZ";
+                list.innerHTML += `
+                    <tr>
+                        <td>
+                            <div style="font-size:10px; color:var(--accent); font-weight:800;">BİLDİREN: <span style="color:#fff;">${gonderen.toUpperCase()}</span></div>
+                            <div style="font-size:10px; color:var(--text-dim); font-weight:700; margin-top:4px;">PERSONEL: <span style="color:#fff;">${personel.toUpperCase()}</span></div>
+                        </td>
+                        <td>
+                            <div style="font-size:11px; color:var(--success); font-family: 'JetBrains Mono';">BAŞ: ${d.start || '--:--'}</div>
+                            <div style="font-size:11px; color:var(--danger); font-family: 'JetBrains Mono'; margin-top:4px;">BİT: ${d.end || '--:--'}</div>
+                        </td>
+                        <td style="text-align:center;">
+                            <div onclick='showMissingPoints(${pointsData})' style="background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); padding: 6px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; display: inline-block; font-size:12px;">${missingCount} NOKTA</div>
+                        </td>
+                        <td style="text-align:right;">
+                            <button class="v-btn" style="background:none; border:none; cursor:pointer; color:var(--success);" onclick="window.sil('${dId}','${bId}')"><i class="fas fa-check-circle" style="font-size:20px;"></i></button>
+                        </td>
+                    </tr>`;
+            }
+        }
+    });
+}
+
+// --- GLOBAL ACTIONS ---
+window.goPage = (p) => {
+    if(!siteSelect.value) return window.cgaAlert("Önce bölge seçmelisiniz!");
+    window.location.href = p;
+};
+
+window.sil = (id, b) => {
+    window.cgaConfirm("Bu eksik devriye kaydını temizlemek istediğinize emin misiniz?", async () => {
+        await update(ref(db, `eksikdevriyebildirim/${id}`), {[b]: null});
+    });
+};
+
+document.getElementById("resetIhlalBtn").onclick = () => {
+    if(!db) return;
+    window.cgaConfirm("TÜM EKSİK DEVRİYE BİLDİRİMLERİ SİLİNCEK?", async () => {
+        await remove(ref(db, "eksikdevriyebildirim"));
+    });
+};
+
+window.showMissingPoints = (points) => {
+    let pointsHtml = points.map(p => `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-location-dot" style="color: var(--danger);"></i>
+            <span style="font-weight: 600; color: #eee;">${p}</span>
+        </div>`).join('');
+    modalBody.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="color: var(--accent); margin: 0;"><i class="fas fa-ghost"></i> EKSİK NOKTALAR</h3>
+            <i class="fas fa-times" onclick="document.getElementById('cgaModal').style.display='none'" style="cursor: pointer; font-size: 20px; color: var(--text-dim);"></i>
+        </div>
+        <div style="max-height: 350px; overflow-y: auto; padding-right: 5px;">${pointsHtml || '<p style="text-align:center; color:var(--text-dim);">Nokta bilgisi bulunamadı.</p>'}</div>
+        <button onclick="document.getElementById('cgaModal').style.display='none'" style="width: 100%; margin-top: 20px; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer;">KAPAT</button>`;
+    modal.style.display = "flex";
+};
+
+window.onclick = (e) => { if(e.target == modal) modal.style.display = "none"; };
+
+document.getElementById("profileIcon").onclick = () => {
+    modalBody.innerHTML = `
+        <div style="text-align:center;">
+            <i class="fas fa-user-shield" style="font-size:40px; color:var(--accent); margin-bottom:15px;"></i>
+            <div style="margin-bottom:20px;">
+                <input type="text" id="newUsername" value="${currentUser.username}" placeholder="Kullanıcı Adı" style="width:100%; background:#1a1d23; border:1px solid var(--border); color:#ffffff; padding:12px; border-radius:8px; margin-bottom:10px; outline:none; text-align:center;">
+                <input type="password" id="newPassword" placeholder="Yeni Şifre" style="width:100%; background:#1a1d23; border:1px solid var(--border); color:#ffffff; padding:12px; border-radius:8px; outline:none; text-align:center;">
+            </div>
+            <hr style="margin:20px 0; border:none; border-top:1px solid var(--border);">
+            <button id="saveProfile" style="width:100%; background:var(--success); color:#000; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer; margin-bottom:10px;">BİLGİLERİ GÜNCELLE</button>
+            <button onclick="document.getElementById('cgaModal').style.display='none'" style="width:100%; background:var(--border); color:#fff; border:none; padding:10px; border-radius:10px; font-weight:800; cursor:pointer;">KAPAT</button>
+        </div>`;
+    modal.style.display = "flex";
+document.getElementById("saveProfile").onclick = async () => {
+    const u = document.getElementById("newUsername").value;
+    const p = document.getElementById("newPassword").value;
+    const targetSiteId = "-OlKckk7RXN9m_NGAYsQ"; // Senin verdiğin merkez ID
+
+    if(!u || !p) return window.cgaAlert("Kullanıcı adı ve şifre boş olamaz!");
+
+    try {
+        // 1. ADIM: Merkezden (mDB) o ID'ye ait config bilgilerini çek
+        const siteSnap = await get(ref(mDB, `sites/${targetSiteId}/config`));
+        
+        if (!siteSnap.exists()) {
+            return window.cgaAlert("Hedef projenin config bilgileri bulunamadı!");
+        }
+
+        const targetConfig = siteSnap.val();
+
+        // 2. ADIM: Bu config ile geçici bir Firebase App başlat (Eğer daha önce başlatılmadıysa)
+        // 'temp_update_app' ismini veriyoruz ki diğer bağlantılarla karışmasın
+        let tempApp;
+        const apps = getApps();
+        const existingApp = apps.find(a => a.name === "temp_update_app");
+        
+        if (!existingApp) {
+            tempApp = initializeApp(targetConfig, "temp_update_app");
+        } else {
+            tempApp = existingApp;
+        }
+
+        const tempDB = getDatabase(tempApp);
+
+        // 3. ADIM: O projenin kendi veritabanındaki 'users' altından şifreyi güncelle
+        // Not: currentUser.username (oturumdaki isim) üzerinden o projedeki kaydı bulur
+        await update(ref(tempDB, `users/${currentUser.username}`), {
+            username: u,
+            password: p
+        });
+
+        // 4. ADIM: SessionStorage'ı güncelle
+        const updatedUser = { ...currentUser, username: u, password: p };
+        sessionStorage.setItem("currentUser", JSON.stringify(updatedUser));
+
+        window.cgaAlert("Şifre  başarıyla güncellendi!");
+        setTimeout(() => location.reload(), 1500);
+
+    } catch (error) {
+        console.error("Özel config güncelleme hatası:", error);
+        window.cgaAlert("Hata: Hedef projenin veritabanına bağlanılamadı!");
+    }
+};
+};
+document.getElementById("statusBtn").onclick = async () => {
+    if(!db) return window.cgaAlert("Lütfen önce bir bölge seçiniz!");
+    modalBody.innerHTML = "<h3>Yükleniyor...</h3>";
+    modal.style.display = "flex";
+    const snap = await get(ref(db, 'users'));
+    if(!snap.exists()) { modalBody.innerHTML = "<h3>Kayıtlı personel bulunamadı.</h3>"; return; }
+    let html = `<h3><i class="fas fa-users"></i> GÜVENLİK REHBERİ</h3><div style="max-height:400px; overflow-y:auto; margin-top:20px;">`;
+    const users = snap.val();
+    let count = 0;
+    for(let name in users) {
+        if(users[name].type === 'security') {
+            count++;
+            html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border);">
+                    <div><div style="font-weight:700;">${name.toUpperCase()}</div><div style="font-size:11px; color:var(--text-dim);">${users[name].phone || 'No Yok'}</div></div>
+                    <a href="tel:${users[name].phone}" style="color:var(--success); text-decoration:none;"><i class="fas fa-phone"></i></a>
+                </div>`;
+        }
+    }
+    if(count === 0) html += `<p style="text-align:center; color:var(--text-dim); padding:20px;">Personel bulunamadı.</p>`;
+    html += `</div><button onclick="document.getElementById('cgaModal').style.display='none'" style="width:100%; margin-top:20px; background:var(--border); color:white; border:none; padding:10px; border-radius:10px; cursor:pointer;">KAPAT</button>`;
+    modalBody.innerHTML = html;
+};
+
+document.getElementById("logoutBtn").onclick = () => {
+    window.cgaConfirm("Sistemden çıkış yapılacak. Emin misiniz?", () => {
+        sessionStorage.clear();
+        window.location.href = "index.html";
+    });
+};
+</script>
 
 </body>
 </html>
-
