@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CGA | MOBİL PANEL</title>
+    
+    <script>
+        (function() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            if (!isMobile) { 
+                window.location.href = "tamam.html"; 
+            }
+        })();
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+        --bg: #030712;
+        --panel: rgba(17, 24, 39, 0.9);
+        --accent: #38bdf8;
+        --success: #10b981;
+        --danger: #ef4444;
+        --text: #f3f4f6;
+        --border: rgba(255, 255, 255, 0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+        font-family: 'Outfit', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.4;
+    }
+
+    /* --- MOBİL HEADER --- */
+    header {
+        background: rgba(3, 7, 18, 0.95);
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .logo { font-weight: 800; font-size: 18px; }
+    .logo span { color: var(--accent); }
+    .clock { font-family: 'JetBrains Mono'; font-size: 12px; color: var(--accent); }
+
+    /* --- KPI ÖZET ALANI --- */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 15px;
+    }
+    .kpi-mini {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        padding: 15px;
+        border-radius: 12px;
+        text-align: center;
+    }
+    .kpi-mini label { font-size: 10px; text-transform: uppercase; color: #94a3b8; display: block; }
+    .kpi-mini span { font-size: 18px; font-weight: 700; font-family: 'JetBrains Mono'; }
+
+    /* --- FİLTRELEME İSTASYONU --- */
+    .mobile-controls {
+        padding: 0 15px 20px 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    input, select {
+        width: 100%;
+        background: #111827;
+        border: 1px solid var(--border);
+        color: white;
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 14px;
+        outline: none;
+        -webkit-appearance: none; /* Bazı mobil cihazlarda varsayılan stili kaldırır */
+    }
+
+    /* TARİH SİMGESİ BEYAZLATMA - TAM ÇÖZÜM */
+  /* --- TARİH GİRİŞİ KÖKTEN ÇÖZÜM --- */
+    input[type="date"] {
+        color-scheme: dark;
+        position: relative;
+        padding-right: 40px; /* İkon için yer açtık */
+    }
+
+    /* Standart tarayıcı simgesini tamamen gizle */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        padding: 0;
+        cursor: pointer;
+        /* Kendi beyaz ikonumuzu ekliyoruz (Base64 Beyaz Takvim İkonu) */
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>') no-repeat center;
+        background-size: contain;
+        filter: none !important; /* Filtrele uğraşma, direkt beyaz SVG kullandık */
+    }
+    select { border-color: var(--accent); }
+
+    .btn-run {
+        background: var(--accent);
+        color: #000;
+        border: none;
+        padding: 14px;
+        border-radius: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+
+    /* --- LOG KARTLARI --- */
+    .log-container { padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+    .log-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        padding: 15px;
+        position: relative;
+    }
+    .log-card.mismatch { border-left: 4px solid var(--danger); }
+    
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .time-stamp { font-family: 'JetBrains Mono'; font-size: 12px; color: #94a3b8; }
+    
+    .flow-row { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+    .person { font-weight: 700; color: var(--accent); font-size: 15px; }
+    .arrow { color: #94a3b8; }
+
+    .location-box { font-size: 13px; color: #ccc; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; }
+
+    .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .duration { font-family: 'JetBrains Mono'; font-weight: 700; color: var(--accent); }
+
+    .badge { font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: 800; }
+    .badge-ok { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .badge-err { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+    #backBtn {
+        position: fixed; bottom: 20px; right: 20px;
+        width: 45px; height: 45px; border-radius: 50%;
+        background: var(--accent); border: none; font-size: 20px; font-weight: bold;
+        z-index: 1000;
+    }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">CGA <span>v1.01</span></div>
+    <div class="clock" id="clock">00:00:00</div>
+</header>
+
+<div class="stats-grid">
+    <div class="kpi-mini">
+        <label>TOPLAM DEVİR TESLİM</label>
+        <span id="kpi-total">0</span>
+    </div>
+    <div class="kpi-mini">
+        <label>ORTALAMA NÖBET SÜRESİ</label>
+        <span id="kpi-avg">0s 0d</span>
+    </div>
+</div>
+
+<div class="mobile-controls">
+    <select id="userFilter"><option value="">TÜM PERSONELLER</option></select>
+    <input type="text" id="liveSearch" placeholder="İsim ara...">
+    <input type="date" id="dateFilter">
+    <button class="btn-run" id="runQuery">SORGULA</button>
+</div>
+
+<div id="logList" class="log-container">
+    </div>
+
+<button id="backBtn" onclick="history.back()">×</button>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+    class MobileCga {
+        constructor() {
+            this.logs = [];
+            this.init();
+            this.startClock();
+        }
+
+        async init() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyAM5NHBpRHIlttNXwJ9YKDypR4eoyQbDeM",
+                authDomain: "kolartguvenlik-e002d.firebaseapp.com",
+                databaseURL: "https://kolartguvenlik-e002d-default-rtdb.firebaseio.com",
+                projectId: "kolartguvenlik-e002d",
+                storageBucket: "kolartguvenlik-e002d.firebasestorage.app",
+                appId: "1:212955174898:web:f77501991c1648fb66bd6b"
+            };
+
+            const app = initializeApp(firebaseConfig, "mobil-merkez");
+            const siteId = sessionStorage.getItem("selectedSiteId");
+            if (!siteId) { window.location.href = "yetkili.html"; return; }
+
+            const siteSnap = await get(ref(getDatabase(app), `sites/${siteId}/config`));
+            this.db = getDatabase(initializeApp(siteSnap.val(), siteId + "-mob"));
+
+            this.loadData();
+            this.attachEvents();
+        }
+
+        loadData() {
+            // Personel Listesi
+            onValue(ref(this.db, 'users'), s => {
+                const select = document.getElementById('userFilter');
+                select.innerHTML = '<option value="">TÜM PERSONELLER</option>';
+                if(s.val()) {
+                    Object.values(s.val()).filter(u => u.type === 'security').forEach(u => {
+                        const n = u.name || u.username;
+                        select.innerHTML += `<option value="${n}">${n.toUpperCase()}</option>`;
+                    });
+                }
+            });
+
+            // Nöbet Verileri
+            onValue(ref(this.db, 'tamamnbt'), s => {
+                this.logs = s.val() ? Object.values(s.val()) : [];
+                this.render(this.logs);
+                this.updateKPIs(this.logs);
+            });
+        }
+
+        render(data) {
+            const container = document.getElementById('logList');
+            container.innerHTML = '';
+            data.sort((a,b) => new Date(b.startTime) - new Date(a.startTime));
+
+            data.forEach(log => {
+                const start = new Date(log.startTime);
+                const end = log.endTime ? new Date(log.endTime) : null;
+                const dur = end ? (end - start) : 0;
+                const isMismatch = log.startPoint !== log.endPoint;
+
+                const card = document.createElement('div');
+                card.className = `log-card ${isMismatch ? 'mismatch' : ''}`;
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="time-stamp">${start.toLocaleDateString('tr-TR')} - ${start.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}</span>
+                        <span class="badge ${isMismatch ? 'badge-err' : 'badge-ok'}">${isMismatch ? 'UYUŞMAZLIK' : 'GÜVENLİ'}</span>
+                    </div>
+                    <div class="flow-row">
+                        <span class="person">${log.startBy}</span>
+                        <span class="arrow">➔</span>
+                        <span class="person" style="color:#fff">${log.deliveredTo || '...'}</span>
+                    </div>
+                    <div class="location-box">
+                        📍 ${log.startPoint} <span class="arrow">➔</span> ${log.endPoint || '?'}
+                    </div>
+                    <div class="card-footer">
+                        <span style="font-size:10px; color:#94a3b8">NÖBET SÜRESİ:</span>
+                        <span class="duration">${this.formatTime(dur)}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        updateKPIs(data) {
+            let totalMs = 0;
+            data.forEach(l => {
+                if(l.endTime) totalMs += (new Date(l.endTime) - new Date(l.startTime));
+            });
+            document.getElementById('kpi-total').innerText = data.length;
+            document.getElementById('kpi-avg').innerText = this.formatTime(data.length > 0 ? (totalMs / data.length) : 0);
+        }
+
+        formatTime(ms) {
+            const h = Math.floor(ms / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            return `${h}s ${m}d`;
+        }
+
+        startClock() {
+            setInterval(() => {
+                document.getElementById('clock').innerText = new Date().toLocaleTimeString('tr-TR');
+            }, 1000);
+        }
+
+        attachEvents() {
+            const filter = () => {
+                const user = document.getElementById('userFilter').value;
+                const search = document.getElementById('liveSearch').value.toLowerCase();
+                const date = document.getElementById('dateFilter').value;
+
+                const filtered = this.logs.filter(l => {
+                    const mU = !user || l.startBy === user || l.deliveredTo === user;
+                    const mS = !search || JSON.stringify(l).toLowerCase().includes(search);
+                    const mD = !date || l.startTime.startsWith(date);
+                    return mU && mS && mD;
+                });
+                this.render(filtered);
+            };
+            document.getElementById('runQuery').onclick = filter;
+            document.getElementById('liveSearch').oninput = filter;
+        }
+    }
+
+    new MobileCga();
+</script>
+
+</body>
+</html>
