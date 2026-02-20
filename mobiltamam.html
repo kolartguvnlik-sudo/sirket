@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ŞİRKET Personel-Kontrol | Komuta Merkezi 2026</title>
+    
+    <script>
+        (function() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            // Eğer mobilden giriyorsa ve şu an mobiltamam.html'de değilse oraya gönder
+            if (isMobile && !window.location.href.includes("mobiltamam.html")) {
+                window.location.href = "mobiltamam.html";
+            } 
+            // Eğer PC'den giriyorsa ve şu an tamam.html'de değilse oraya gönder
+            else if (!isMobile && !window.location.href.includes("tamam.html")) {
+                window.location.href = "tamam.html";
+            }
+        })();
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+
+    <style>
+        :root {
+            --bg-main: #0a0c10;
+            --panel-bg: #12151c;
+            --accent: #00d2ff;
+            --accent-dark: #0080ff;
+            --success: #00ff88;
+            --warning: #ffcc00;
+            --danger: #ff4d4d;
+            --text-p: #ffffff;
+            --text-s: #8b949e;
+            --border: rgba(255, 255, 255, 0.08);
+            --font-main: 'Montserrat', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background: var(--bg-main); color: var(--text-p); 
+            font-family: var(--font-main); min-height: 100vh;
+            background-image: radial-gradient(circle at top right, rgba(0, 210, 255, 0.05), transparent);
+            overflow-x: hidden;
+        }
+
+        /* --- MOBİL NAV --- */
+        nav {
+            height: 70px; background: rgba(18, 21, 28, 0.95); backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 15px; position: sticky; top: 0; z-index: 1000;
+        }
+        .nav-brand h1 { font-size: 1.1rem; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        .nav-brand span { font-size: 0.7rem; color: #fff; opacity: 0.5; display: block; }
+
+        .btn-exit { 
+            background: linear-gradient(45deg, #ff4d4d, #b30000); color: #fff;
+            padding: 8px 12px; border-radius: 10px; border: none; font-weight: 700; font-size: 0.7rem;
+        }
+
+        .app-container { width: 100%; padding: 15px 10px; }
+
+        /* KPI KARTLARI (2 KOLONLU MOBİL) */
+        .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .kpi-card { 
+            background: var(--panel-bg); padding: 15px; border-radius: 15px; border: 1px solid var(--border);
+        }
+        .kpi-card h3 { font-size: 0.6rem; color: var(--text-s); text-transform: uppercase; margin-bottom: 5px; }
+        .kpi-card .value { font-size: 1.4rem; font-weight: 800; font-family: 'JetBrains Mono'; }
+
+        /* FİLTRE ALANI */
+        .filter-hub { 
+            background: var(--panel-bg); padding: 15px; border-radius: 20px;
+            margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border);
+        }
+        .input-wrap label { font-size: 0.7rem; font-weight: 700; color: var(--accent); margin-bottom: 5px; display: block; }
+        input, select {
+            background: #0d1117; border: 1px solid #30363d; color: #fff;
+            padding: 12px; border-radius: 10px; font-size: 0.85rem; width: 100%;
+        }
+
+        .btn-sync {
+            background: linear-gradient(45deg, var(--accent), var(--accent-dark));
+            color: #000; padding: 10px; border-radius: 10px; border: none;
+            font-weight: 800; font-size: 0.75rem; text-transform: uppercase; width: 100%;
+        }
+
+        /* TABLO DÜZENİ */
+        .table-container { 
+            background: var(--panel-bg); padding: 10px; border-radius: 20px;
+            border: 1px solid var(--border); overflow-x: auto;
+        }
+        table.dataTable { font-size: 0.8rem !important; border-collapse: collapse !important; }
+        table.dataTable thead th { font-size: 0.65rem !important; color: var(--accent) !important; padding: 10px !important; }
+        
+        .status-chip { 
+            padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; 
+            display: inline-block; width: 100%; text-align: center;
+        }
+        .chip-tam { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
+        .chip-eksik { background: rgba(255, 77, 77, 0.15); color: #ff4d4d; }
+
+        /* DETAY PANELİ (MODAL) */
+        #detailDrawer {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 95%; max-width: 400px; max-height: 80vh; background: var(--panel-bg); 
+            z-index: 2000; visibility: hidden; opacity: 0; transition: 0.3s;
+            border: 1px solid var(--accent); padding: 20px; border-radius: 20px; overflow-y: auto;
+        }
+        #detailDrawer.active { visibility: visible; opacity: 1; }
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1999; display: none; }
+
+        #loadingLayer {
+            position: fixed; inset: 0; background: var(--bg-main); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .loader-box { width: 40px; height: 40px; border: 3px solid #161b22; border-top-color: var(--accent); border-radius: 50%; animation: rot 0.8s infinite linear; }
+        @keyframes rot { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="loadingLayer">
+    <div class="loader-box"></div>
+    <p style="margin-top:15px; font-size: 0.6rem; letter-spacing: 2px; color: var(--accent);">YÜKLENİYOR...</p>
+</div>
+
+<nav>
+    <div class="nav-brand">
+        <h1>ŞİRKET</h1>
+        <span>Personel Kontrol</span>
+    </div>
+    <button class="btn-exit" onclick="location.href='sirket.html'">ÇIKIŞ</button>
+</nav>
+
+<div class="app-container">
+    <div class="kpi-row">
+        <div class="kpi-card"><h3>Toplam</h3><div class="value" id="kpi-total">0</div></div>
+        <div class="kpi-card"><h3>Başarılı</h3><div class="value" id="kpi-ok" style="color:var(--success)">0</div></div>
+        <div class="kpi-card"><h3>Sorunlu</h3><div class="value" id="kpi-err" style="color:var(--danger)">0</div></div>
+        <div class="kpi-card"><h3>Ortalama</h3><div class="value" id="kpi-avg" style="color:var(--warning)">0 dk</div></div>
+    </div>
+
+    <div class="filter-hub">
+        <div class="input-wrap">
+            <label>Sorgu Tarihi</label>
+            <input type="date" id="targetDate">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <select id="userSelector"><option value="">Personel</option></select>
+            <select id="statusSelector"><option value="">Durum</option><option value="Tam">Tam</option><option value="Eksik">Eksik</option></select>
+        </div>
+        <button class="btn-sync" id="tacticModeBtn">GÖRÜNÜM: ALFA</button>
+    </div>
+
+    <div class="table-container">
+        <table id="eliteTable" class="display nowrap" style="width:100%">
+            <thead>
+                <tr>
+                    <th>GÖREVLİ</th>
+                    <th>DURUM</th>
+                    <th>SÜRE</th>
+                    <th>İŞLEM</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="drawer-overlay" id="overlay"></div>
+<div id="detailDrawer">
+    <div id="drawerContent"></div>
+    <button onclick="closeDrawer()" style="width:100%; margin-top:20px; padding:12px; background:#161b22; color:#fff; border:none; border-radius:10px;">KAPAT</button>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+const fbConfig = {
+    apiKey: "AIzaSyAM5NHBpRHIlttNXwJ9YKDypR4eoyQbDeM",
+    authDomain: "kolartguvenlik-e002d.firebaseapp.com",
+    databaseURL: "https://kolartguvenlik-e002d-default-rtdb.firebaseio.com",
+    projectId: "kolartguvenlik-e002d",
+    storageBucket: "kolartguvenlik-e002d.firebasestorage.app",
+    appId: "1:212955174898:web:f77501991c1648fb66bd6b"
+};
+
+const mApp = initializeApp(fbConfig, "merkez");
+const sId = sessionStorage.getItem("selectedSiteId");
+const siteSnap = await get(ref(getDatabase(mApp), "sites/" + sId + "/config"));
+const siteDb = getDatabase(getApps().find(a=>a.name===sId) || initializeApp(siteSnap.val(), sId));
+
+let rawData = [];
+const table = $('#eliteTable').DataTable({
+    responsive: true,
+    dom: 'rtp',
+    pageLength: 20,
+    language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json' }
+});
+
+async function fetchSystemData(dateVal) {
+    $('#loadingLayer').fadeIn(200);
+    rawData = [];
+    const userPool = new Set();
+    try {
+        const snap = await get(ref(siteDb, `devriyeHistory/${dateVal}`));
+        if(snap.exists()) {
+            const users = snap.val();
+            Object.keys(users).forEach(u => {
+                Object.keys(users[u]).forEach(id => {
+                    let item = users[u][id];
+                    item.pName = item.user || u;
+                    item.points = item.points || [];
+                    // Süre hesaplama (Basit dk formatı)
+                    let diff = 0;
+                    if(item.start && item.end) {
+                        const s = item.start.split(':'), e = item.end.split(':');
+                        diff = (parseInt(e[0])*60 + parseInt(e[1])) - (parseInt(s[0])*60 + parseInt(s[1]));
+                        if(diff < 0) diff += 1440;
+                    }
+                    item.duration = diff + " dk";
+                    rawData.push(item);
+                    userPool.add(item.pName);
+                });
+            });
+        }
+        renderTable(rawData, userPool);
+    } catch(e) { console.error(e); }
+    $('#loadingLayer').fadeOut(400);
+}
+
+function renderTable(data, users) {
+    table.clear();
+    let cTam = 0, cErr = 0, totalDk = 0;
+    data.forEach((row, i) => {
+        const isTam = (row.status || '').toLowerCase().includes('tam');
+        if(isTam) cTam++; else cErr++;
+        totalDk += parseInt(row.duration) || 0;
+
+        table.row.add([
+            `<b>${row.pName}</b>`,
+            `<span class="status-chip ${isTam?'chip-tam':'chip-eksik'}">${row.status}</span>`,
+            `<span style="color:var(--accent)">${row.duration}</span>`,
+            `<button class="btn-sync" style="width:auto; padding:5px 8px;" onclick="openDetail(${i})">DETAY</button>`
+        ]);
+    });
+    table.draw();
+    $('#kpi-total').text(data.length);
+    $('#kpi-ok').text(cTam);
+    $('#kpi-err').text(cErr);
+    $('#kpi-avg').text((data.length > 0 ? Math.round(totalDk/data.length) : 0) + " dk");
+
+    let uHtml = '<option value="">Personel</option>';
+    Array.from(users).forEach(u => uHtml += `<option value="${u}">${u}</option>`);
+    $('#userSelector').html(uHtml);
+}
+
+window.openDetail = (idx) => {
+    const d = rawData[idx];
+    $('#drawerContent').html(`
+        <h3 style="color:var(--accent); margin-bottom:15px;">Devriye Analizi</h3>
+        <p><b>Görevli:</b> ${d.pName}</p>
+        <p><b>Süre:</b> ${d.duration}</p>
+        <p><b>Noktalar:</b> ${d.points.length} adet</p>
+        <hr style="opacity:0.1; margin:10px 0;">
+        <div style="max-height:200px; overflow-y:auto; font-size:0.75rem;">
+            ${d.points.map(p => `<div>• ${p.name} <span style="float:right; color:var(--success)">${p.time}</span></div>`).join('')}
+        </div>
+    `);
+    $('#detailDrawer').addClass('active');
+    $('#overlay').fadeIn(200);
+};
+
+window.closeDrawer = () => { $('#detailDrawer').removeClass('active'); $('#overlay').fadeOut(200); };
+
+$(document).ready(() => {
+    const today = new Date().toISOString().split('T')[0];
+    $('#targetDate').val(today);
+    fetchSystemData(today);
+});
+
+$('#targetDate').on('change', function() { fetchSystemData(this.value); });
+$('#userSelector, #statusSelector').on('change', () => {
+    table.column(0).search($('#userSelector').val()).column(1).search($('#statusSelector').val()).draw();
+});
+$('#overlay').on('click', closeDrawer);
+</script>
+</body>
+</html>
