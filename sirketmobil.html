@@ -300,20 +300,9 @@ window.cgaConfirm = (msg, onConfirm) => {
 // --- CORE LOGIC ---
 setInterval(() => { 
     document.getElementById("liveClock").innerText = new Date().toLocaleTimeString('tr-TR'); 
-    updateShiftTimers();
 }, 1000);
 
-function updateShiftTimers() {
-    const timers = document.querySelectorAll('.live-timer');
-    timers.forEach(t => {
-        const start = parseInt(t.dataset.start);
-        const diff = Math.floor((Date.now() - start) / 1000);
-        const h = Math.floor(diff / 3600);
-        const m = Math.floor((diff % 3600) / 60);
-        const s = diff % 60;
-        t.innerText = `${h} sa ${m} dk ${s} sn`;
-    });
-}
+
 
 const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || '{"username":"OPERATÖR"}');
 document.getElementById("welcomeMsg").innerText = `Hoş Geldiniz, ${currentUser.username}`;
@@ -353,20 +342,26 @@ function syncData() {
         if(!val) return div.innerHTML = "<div style='grid-column: 1/-1; text-align: center; padding: 20px; color: var(--text-dim);'>Aktif personel yok.</div>";
         const active = Object.values(val).filter(r => r.status === 'started');
         if(active.length === 0) div.innerHTML = "<div style='grid-column: 1/-1; text-align: center; padding: 20px; color: var(--text-dim);'>Şu an nöbette kimse yok.</div>";
-        for(let r of active) {
-            const userRef = await get(ref(db, 'users/'+r.startBy));
-            const phone = userRef.val()?.phone || "";
-            const startTime = new Date(r.startTime).getTime();
-            div.innerHTML += `
-                <div class="guard-card">
-                    <div class="g-data">
-                        <b>${r.startBy.toUpperCase()}</b>
-                        <span>${r.shift} • ${r.startPoint}</span>
-                        <span class="live-timer" data-start="${startTime}" style="color:var(--accent); font-weight:800; display:block; margin-top:5px;">Hesaplanıyor...</span>
-                    </div>
-                    <a href="tel:${phone}" class="g-call"><i class="fas fa-phone"></i> ARA</a>
-                </div>`;
-        }
+ // ... syncData içindeki döngünün içi ...
+for(let r of active) {
+    const userRef = await get(ref(db, 'users/'+r.startBy));
+    const phone = userRef.val()?.phone || "";
+    
+    // Sadece başlangıç saatini (SS:DD) formatında alıyoruz
+    const baslangicSaati = new Date(r.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    div.innerHTML += `
+        <div class="guard-card">
+            <div class="g-data">
+                <b>${r.startBy.toUpperCase()}</b>
+                <span>${r.shift} • ${r.startPoint}</span>
+                <span style="color:var(--accent); font-weight:800; display:block; margin-top:5px;">
+                    <i class="fas fa-sign-in-alt"></i> GİRİŞ SAATİ: ${baslangicSaati}
+                </span>
+            </div>
+            <a href="tel:${phone}" class="g-call"><i class="fas fa-phone"></i> ARA</a>
+        </div>`;
+}
     });
 
     onValue(ref(db, "eksikdevriyebildirim"), snap => {
