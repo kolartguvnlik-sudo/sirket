@@ -151,12 +151,38 @@
     .badge-ok { background: rgba(16, 185, 129, 0.2); color: var(--success); }
     .badge-err { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
-    #backBtn {
-        position: fixed; bottom: 20px; right: 20px;
-        width: 45px; height: 45px; border-radius: 50%;
-        background: var(--accent); border: none; font-size: 20px; font-weight: bold;
-        z-index: 1000;
-    }
+  #backBtn {
+    position: fixed; 
+    top: 20px; 
+    right: 20px; 
+    padding: 0 20px; /* Metin için sağdan soldan boşluk */
+    height: 40px; 
+    border-radius: 8px;
+    background: #ef4444; /* Kırmızı */
+    color: white; 
+    border: none;
+    font-size: 13px; 
+    font-weight: 800; /* Yazıyı kalın yapalım */
+    letter-spacing: 1px; /* Harf arası boşluk */
+    cursor: pointer; 
+    z-index: 1001; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+}
+
+#backBtn:hover {
+    background: #dc2626;
+    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Saati butonun genişliğine göre sola itiyoruz */
+.system-status {
+    margin-right: 100px; /* Buton genişlediği için burayı artırdık */
+}
     </style>
 </head>
 <body>
@@ -187,8 +213,7 @@
 <div id="logList" class="log-container">
     </div>
 
-<button id="backBtn" onclick="history.back()">×</button>
-
+<button id="backBtn" onclick="history.back()">GERİ</button>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
     import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
