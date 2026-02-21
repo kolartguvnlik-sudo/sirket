@@ -151,37 +151,37 @@
     .badge-ok { background: rgba(16, 185, 129, 0.2); color: var(--success); }
     .badge-err { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
-  #backBtn {
-    position: fixed; 
-    top: 20px; 
-    right: 20px; 
-    padding: 0 20px; /* Metin için sağdan soldan boşluk */
-    height: 40px; 
-    border-radius: 8px;
-    background: #ef4444; /* Kırmızı */
-    color: white; 
+#backBtn {
+    background: #ef4444;
+    color: white;
     border: none;
-    font-size: 13px; 
-    font-weight: 800; /* Yazıyı kalın yapalım */
-    letter-spacing: 1px; /* Harf arası boşluk */
-    cursor: pointer; 
-    z-index: 1001; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 5px 15px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+    /* Fixed konumlandırmayı kaldırdık, header içinde normal eleman oldu */
 }
 
 #backBtn:hover {
     background: #dc2626;
-    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
-    transform: translateY(-1px);
 }
 
-/* Saati butonun genişliğine göre sola itiyoruz */
-.system-status {
-    margin-right: 100px; /* Buton genişlediği için burayı artırdık */
+/* Header'ı buton sığacak şekilde düzenleyelim */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Saati biraz daha belirgin ve sola yakın yapalım */
+.clock {
+    flex-grow: 1;
+    text-align: center;
+    margin-right: 5px;
 }
     </style>
 </head>
@@ -190,6 +190,7 @@
 <header>
     <div class="logo">CGA <span>v1.01</span></div>
     <div class="clock" id="clock">00:00:00</div>
+    <button id="backBtn" onclick="history.back()">GERİ</button>
 </header>
 
 <div class="stats-grid">
