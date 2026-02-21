@@ -119,7 +119,7 @@ async function initPage(){
         renderEvents();
     };
 
-    // --- TÜRKÇE KARAKTER TEMİZLEME FONKSİYONU ---
+    // --- TÜRKÇE KARAKTER TEMİZLEME ---
     function trToEn(text) {
         if (!text) return "";
         return text.toString()
@@ -134,47 +134,69 @@ async function initPage(){
     // --- PDF KAYDETME FONKSİYONU ---
     async function savePDF(olay) {
         try {
-            const { PDFDocument } = PDFLib;
-            const url = 'sablon.pdf'; 
-            const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
+            const { PDFDocument, rgb } = PDFLib;
+            // Cache hatasını önlemek için v parametresi ekledik
+            const url = 'sablon.pdf?v=' + new Date().getTime(); 
+            const existingPdfBytes = await fetch(url).then(res => {
+                if(!res.ok) throw new Error("sablon.pdf dosyasi bulunamadi!");
+                return res.arrayBuffer();
+            });
+            
             const pdfDoc = await PDFDocument.load(existingPdfBytes);
             const form = pdfDoc.getForm();
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
 
-            // Karakter sınırını kaldırdığın için direkt basıyoruz ama Türkçe harfleri temizliyoruz
-            form.getTextField('A1').setText(trToEn(olay.guvenlik || olay.user || "")); 
-            form.getTextField('T1').setText(trToEn(olay.location || ""));
-            form.getTextField('T2').setText(trToEn(olay.konu || olay.type || ""));
-            form.getTextField('T3').setText(trToEn(olay.date || ""));
-            form.getTextField('Y1').setText(trToEn(olay.desc || olay.description || ""));
+            // KARAKTER SINIRLARINI KALDIR (TEDBİREN)
+            const alanlar = ['r1','g1','t1','t2','t3','t4','a1','a3','y1'];
+            alanlar.forEach(a => { try { form.getTextField(a).setMaxLength(undefined); } catch(e){} });
 
+            // SENİN DEDİĞİN EŞLEŞTİRMELER
+            form.getTextField('r1').setText(trToEn(olay.raporNo || ""));        // Rapor no r1
+            form.getTextField('g1').setText(trToEn(olay.location || ""));      // Görev yeri g1
+            form.getTextField('t1').setText(trToEn(olay.location || ""));      // Tespitin yeri t1
+            form.getTextField('t2').setText(trToEn(olay.konu || olay.type || "")); // Tespitin konusu t2 (tehlike demiştin ama kodda t2 olarak biliniyor muhtemelen)
+            form.getTextField('t3').setText(trToEn(olay.date || ""));          // Tarih t3
+            form.getTextField('t4').setText(trToEn(olay.time || ""));          // Saat t4
+            form.getTextField('a1').setText(trToEn(olay.guvenlik || olay.user || "")); // Adı a1
+            form.getTextField('a3').setText(trToEn("GÜVENLİK GÖREVLİSİ"));      // Görevi a3
+            form.getTextField('y1').setText(trToEn(olay.desc || olay.description || "")); // Yorum y1
+
+            // --- FOTOĞRAF BASMA (F1) ---
             if (olay.photoData) {
                 try {
                     const imageBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
                     const jpgImage = await pdfDoc.embedJpg(imageBytes);
-                    const button = form.getButton('F1');
-                    button.setImage(jpgImage);
-                } catch (imgErr) { console.warn("Fotoğraf PDF'e eklenemedi."); }
+                    const f1Field = form.getTextField('f1');
+                    const widgets = f1Field.acroField.getWidgets();
+                    if (widgets.length > 0) {
+                        const rect = widgets[0].getRectangle();
+                        firstPage.drawImage(jpgImage, {
+                            x: rect.x, y: rect.y,
+                            width: rect.width, height: rect.height
+                        });
+                        f1Field.setText(""); // Üzerindeki yazıyı sil
+                    }
+                } catch (imgErr) { console.warn("Fotoğraf basılamadı:", imgErr); }
             }
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `CGA_Rapor_${olay.date}.pdf`;
+            link.download = `CGA_Rapor_${olay.raporNo || olay.date}.pdf`;
             link.click();
         } catch (err) {
             console.error("PDF Hatası:", err);
-            alert("Hata oluştu: " + err.message);
+            alert("SİSTEM HATASI: " + err.message);
         }
     }
 
     function renderEvents(){
         eventsContainer.innerHTML = '';
         let filtered = allEvents;
-
         if(filterUser.value) filtered = filtered.filter(e => e.user === filterUser.value);
         if(filterType.value) filtered = filtered.filter(e => e.type === filterType.value);
-        
         if(document.getElementById('filterStart').value){
             const s = new Date(document.getElementById('filterStart').value);
             filtered = filtered.filter(e => new Date(e.date.split('.').reverse().join('-')) >= s);
@@ -186,10 +208,9 @@ async function initPage(){
         }
         document.getElementById('message').innerHTML = '';
         
-        filtered.forEach(olay => {
+        filtered.sort((a,b) => b.raporNo - a.raporNo).forEach(olay => {
             const card = document.createElement('div');
             card.className = 'event-card';
-            
             card.innerHTML = `
                 <div class="event-header">
                     <span class="event-user">${olay.user}</span>
@@ -206,14 +227,11 @@ async function initPage(){
                     <button class="btn btn-delete">SİL</button>
                 </div>
             `;
-            
             card.querySelector('.btn-pdf').onclick = () => savePDF(olay);
             card.querySelector('.btn-delete').onclick = () => {
                 selectedEventToDelete = olay;
-                document.getElementById('deleteText').innerText = `Bu olay kaydını silmek istediğinize emin misiniz?`;
                 document.getElementById('deleteModal').style.display = 'flex';
             };
-            
             if(olay.photoData) {
                 card.querySelector('.zoomImg').onclick = () => {
                     document.getElementById('modalText').innerHTML = `<img src="${olay.photoData}" style="width:100%; border-radius:15px;">`;
@@ -254,7 +272,6 @@ async function initPage(){
         }
     };
 }
-
 initPage();
 </script>
 </body>
