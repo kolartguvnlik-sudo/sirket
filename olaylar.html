@@ -119,7 +119,7 @@ async function initPage(){
         renderEvents();
     };
 
-    // --- TÜRKÇE KARAKTER TEMİZLEME ---
+    // --- TÜRKÇE KARAKTER DÖNÜŞTÜRÜCÜ ---
     function trToEn(text) {
         if (!text) return "";
         return text.toString()
@@ -131,43 +131,48 @@ async function initPage(){
             .replace(/ç/g, 'c').replace(/Ç/g, 'C');
     }
 
-    // --- PDF KAYDETME FONKSİYONU ---
+    // --- AKILLI PDF KAYDETME ---
     async function savePDF(olay) {
         try {
             const { PDFDocument, rgb } = PDFLib;
-            // Cache hatasını önlemek için v parametresi ekledik
-            const url = 'sablon.pdf?v=' + new Date().getTime(); 
-            const existingPdfBytes = await fetch(url).then(res => {
-                if(!res.ok) throw new Error("sablon.pdf dosyasi bulunamadi!");
-                return res.arrayBuffer();
-            });
+            // Fetch hatasini önlemek için taze url
+            const url = './sablon.pdf?v=' + new Date().getTime(); 
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("sablon.pdf bulunamadi! Lütfen dosya adini kontrol edin.");
             
+            const existingPdfBytes = await response.arrayBuffer();
             const pdfDoc = await PDFDocument.load(existingPdfBytes);
             const form = pdfDoc.getForm();
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
 
-            // KARAKTER SINIRLARINI KALDIR (TEDBİREN)
-            const alanlar = ['r1','g1','t1','t2','t3','t4','a1','a3','y1'];
-            alanlar.forEach(a => { try { form.getTextField(a).setMaxLength(undefined); } catch(e){} });
+            // Güvenli Yazdırma Fonksiyonu (Bulamazsa hata vermez, pas geçer)
+            const güvenliYaz = (alanAdi, veri) => {
+                try {
+                    const field = form.getTextField(alanAdi);
+                    field.setMaxLength(undefined); // Karakter sinirini iptal et
+                    field.setText(trToEn(veri));
+                } catch (e) { console.warn(`PDF'de "${alanAdi}" kutusu bulunamadi.`); }
+            };
 
-            // SENİN DEDİĞİN EŞLEŞTİRMELER
-            form.getTextField('r1').setText(trToEn(olay.raporNo || ""));        // Rapor no r1
-            form.getTextField('g1').setText(trToEn(olay.location || ""));      // Görev yeri g1
-            form.getTextField('t1').setText(trToEn(olay.location || ""));      // Tespitin yeri t1
-            form.getTextField('t2').setText(trToEn(olay.konu || olay.type || "")); // Tespitin konusu t2 (tehlike demiştin ama kodda t2 olarak biliniyor muhtemelen)
-            form.getTextField('t3').setText(trToEn(olay.date || ""));          // Tarih t3
-            form.getTextField('t4').setText(trToEn(olay.time || ""));          // Saat t4
-            form.getTextField('a1').setText(trToEn(olay.guvenlik || olay.user || "")); // Adı a1
-            form.getTextField('a3').setText(trToEn("GÜVENLİK GÖREVLİSİ"));      // Görevi a3
-            form.getTextField('y1').setText(trToEn(olay.desc || olay.description || "")); // Yorum y1
+            // SENİN LİSTEN VE EŞLEŞTİRMELERİN
+            güvenliYaz('R1', olay.raporNo || "");                // Rapor No -> R1
+            güvenliYaz('G1', olay.location || "");              // Görev Yeri -> G1
+            güvenliYaz('T1', olay.location || "");              // Tespitin Yeri -> T1
+            güvenliYaz('T2', olay.konu || olay.type || "");      // Tespitin Konusu -> T2
+            güvenliYaz('T3', olay.date || "");                  // Tarih -> T3
+            güvenliYaz('T4', olay.time || "");                  // Saat -> T4
+            güvenliYaz('A1', olay.guvenlik || olay.user || ""); // Adı -> A1
+            güvenliYaz('A3', "GÜVENLİK GÖREVLİSİ");              // Görevi -> A3
+            güvenliYaz('Y1', olay.desc || olay.description || ""); // Yorum/Açıklama -> Y1
 
-            // --- FOTOĞRAF BASMA (F1) ---
+            // --- FOTOĞRAF İŞLEME (F1 Metin Kutusu Üzerine) ---
             if (olay.photoData) {
                 try {
                     const imageBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
                     const jpgImage = await pdfDoc.embedJpg(imageBytes);
-                    const f1Field = form.getTextField('f1');
+                    
+                    const f1Field = form.getTextField('F1');
                     const widgets = f1Field.acroField.getWidgets();
                     if (widgets.length > 0) {
                         const rect = widgets[0].getRectangle();
@@ -175,9 +180,9 @@ async function initPage(){
                             x: rect.x, y: rect.y,
                             width: rect.width, height: rect.height
                         });
-                        f1Field.setText(""); // Üzerindeki yazıyı sil
+                        f1Field.setText(""); // F1 yazisini temizle
                     }
-                } catch (imgErr) { console.warn("Fotoğraf basılamadı:", imgErr); }
+                } catch (imgErr) { console.warn("Fotoğraf F1 kutusuna basılamadı."); }
             }
 
             const pdfBytes = await pdfDoc.save();
@@ -187,11 +192,12 @@ async function initPage(){
             link.download = `CGA_Rapor_${olay.raporNo || olay.date}.pdf`;
             link.click();
         } catch (err) {
-            console.error("PDF Hatası:", err);
-            alert("SİSTEM HATASI: " + err.message);
+            console.error("PDF İşlem Hatası:", err);
+            alert("Sistem Hatası: " + err.message);
         }
     }
 
+    // --- OLAYLARI LİSTELEME ---
     function renderEvents(){
         eventsContainer.innerHTML = '';
         let filtered = allEvents;
@@ -208,7 +214,8 @@ async function initPage(){
         }
         document.getElementById('message').innerHTML = '';
         
-        filtered.sort((a,b) => b.raporNo - a.raporNo).forEach(olay => {
+        // Rapor No'ya göre sırala (Büyükten küçüğe)
+        filtered.sort((a,b) => (b.raporNo || 0) - (a.raporNo || 0)).forEach(olay => {
             const card = document.createElement('div');
             card.className = 'event-card';
             card.innerHTML = `
