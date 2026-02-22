@@ -1,19 +1,21 @@
 /* ================================
-   CGA PWA SERVICE WORKER
+   CGA FORCE UPDATE PWA SW
+   HER DEĞİŞİMDE VERSION ARTIR
    ================================ */
 
-const CACHE_NAME = "cga-pwa-v4"; 
-// 🔴 HER GÜNCELLEMEDE v1 → v2 → v3 DEĞİŞTİR
+const VERSION = "v1.0.1";   // 🔴 BUNU DEĞİŞTİR → HER UPDATE'TE
+const CACHE = "cga-" + VERSION;
 
-const CORE_FILES = [
 
-  "/", 
+// 📦 CACHE DOSYALARI
+const FILES = [
+  "/",
   "/index.html",
   "/manifest.json",
+  "/logo.png",
 
   "/font.ttf",
 
-  "/logo.png",
   "/icon-120.png",
   "/icon-152.png",
   "/icon-180.png",
@@ -24,7 +26,6 @@ const CORE_FILES = [
   "/mobiltamam.html",
 
   "/olaylar.html",
-
   "/sablon.pdf",
 
   "/sirket.html",
@@ -35,69 +36,61 @@ const CORE_FILES = [
 
   "/tamam.html",
   "/tamammobil.html"
-
 ];
 
 
-// 🔹 INSTALL
-self.addEventListener("install", (event) => {
-  console.log("[SW] Install başladı");
+// 🔴 INSTALL → yeni sürüm direkt aktif
+self.addEventListener("install", e=>{
   self.skipWaiting();
 
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(CORE_FILES))
+  e.waitUntil(
+    caches.open(CACHE).then(c=>c.addAll(FILES))
   );
 });
 
 
-// 🔹 ACTIVATE
-self.addEventListener("activate", (event) => {
-  console.log("[SW] Activate");
+// 🔴 ACTIVATE → eski cacheleri sil + açık uygulamayı yenile
+self.addEventListener("activate", e=>{
 
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log("[SW] Eski cache silindi:", key);
-            return caches.delete(key);
-          }
+  e.waitUntil(
+    caches.keys().then(keys=>{
+      return Promise.all(
+        keys.map(k=>{
+          if(k!==CACHE) return caches.delete(k);
         })
-      )
-    )
+      );
+    })
   );
 
   self.clients.claim();
+
+  // ⭐ AÇIK PWA VARSA ZORLA YENİLE
+  self.clients.matchAll({type:"window"}).then(clients=>{
+    clients.forEach(c=>c.navigate(c.url));
+  });
+
 });
 
 
-// 🔹 FETCH  (Network → Cache fallback)
-self.addEventListener("fetch", (event) => {
+// 🔴 FETCH → HER ZAMAN SUNUCUDAN AL (cache sadece offline için)
+self.addEventListener("fetch", e=>{
 
-  // sadece GET isteklerini yakala
-  if(event.request.method !== "GET") return;
+  if(e.request.method!=="GET") return;
 
-  event.respondWith(
+  e.respondWith(
 
-    fetch(event.request)
-      .then((response) => {
+    fetch(e.request,{cache:"no-store"})   // ⭐ HER ZAMAN TAZE
+      .then(res=>{
 
-        // geçerli cevap ise cache güncelle
-        if(!response || response.status !== 200 || response.type !== "basic"){
-          return response;
-        }
+        const clone=res.clone();
 
-        const clone = response.clone();
+        caches.open(CACHE).then(c=>c.put(e.request,clone));
 
-        caches.open(CACHE_NAME)
-          .then((cache)=> cache.put(event.request, clone));
+        return res;
 
-        return response;
       })
-      .catch(()=> caches.match(event.request))
+      .catch(()=>caches.match(e.request))
 
   );
+
 });
-
-
