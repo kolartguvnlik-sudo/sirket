@@ -6,7 +6,6 @@
 <title>CGA GÜVENLİK | Olay Takip Merkezi</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-<script src="https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.min.js"></script>
 
 <style>
     :root { --bg: #0a0c10; --card-bg: #12151c; --accent: #00d2ff; --danger: #ff4d4d; --warning: #ffcc00; --success: #00ff88; --text: #e6edf3; --text-s: #8b949e; --border: rgba(255, 255, 255, 0.08); }
@@ -84,29 +83,24 @@ async function initPage(){
     const filterType = document.getElementById('filterType');
     let allEvents = [];
 
-    // Metni olduğu gibi bırakan temiz fonksiyon
-    function formatText(text) {
-        return text ? text.toString().toUpperCase() : "";
+    // SENİN ÇÖZÜMÜN: Türkçe Karakterleri Güvenli Hale Getirme
+    function fixTurkishChars(str) {
+        if (!str) return "";
+        const map = {'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
+        return str.toString().replace(/[çÇğĞıİöÖşŞüÜ]/g, m => map[m]).toUpperCase();
     }
 
     async function savePDF(olay) {
         try {
-            const { PDFDocument, rgb } = PDFLib;
+            const { PDFDocument } = PDFLib;
             const url = 'sablon.pdf?v=' + new Date().getTime(); 
             const response = await fetch(url);
             if(!response.ok) throw new Error("sablon.pdf bulunamadi!");
             
             const pdfDoc = await PDFDocument.load(await response.arrayBuffer());
-            
-            // FONT DESTEĞİ
-            pdfDoc.registerFontkit(fontkit);
-            const fontUrl = 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf';
-            const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-            const customFont = await pdfDoc.embedFont(fontBytes);
-
             const form = pdfDoc.getForm();
             const pages = pdfDoc.getPages();
-            const firstPage = pages[0];
+            const fields = form.getFields();
 
             const mapping = {
                 'P1': olay.raporNo,
@@ -123,45 +117,34 @@ async function initPage(){
                 'Y1': olay.desc
             };
 
-            // ESKİ YÖNTEMİ UNUT: Form alanlarının koordinatlarını bulup ÜZERİNE YAZIYORUZ
-            const fields = form.getFields();
             fields.forEach(field => {
                 const name = field.getName();
                 if (mapping[name] !== undefined) {
                     try {
-                        const widgets = field.acroField.getWidgets();
-                        if (widgets.length > 0) {
-                            const rect = widgets[0].getRectangle();
-                            // Form alanını temizle
-                            field.hidden(); 
-                            // Tam koordinata Türkçe destekli fontla yaz
-                            firstPage.drawText(formatText(mapping[name]), {
-                                x: rect.x + 2,
-                                y: rect.y + 2,
-                                size: 10,
-                                font: customFont,
-                                color: rgb(0, 0, 0),
-                            });
-                        }
-                    } catch (e) { console.warn(name + " yazılamadı."); }
+                        const textField = form.getTextField(name);
+                        // SENİN ÇÖZÜMÜNÜ BURADA UYGULUYORUZ
+                        textField.setText(fixTurkishChars(mapping[name]));
+                    } catch (e) { 
+                        console.warn(name + " alanına yazılamadı."); 
+                    }
                 }
             });
 
-            // FOTOĞRAF
             if (olay.photoData) {
                 try {
                     const imgBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
                     const jpgImage = await pdfDoc.embedJpg(imgBytes);
                     const f1Field = form.getTextField('F1');
                     const rect = f1Field.acroField.getWidgets()[0].getRectangle();
-                    firstPage.drawImage(jpgImage, { 
+                    pages[0].drawImage(jpgImage, { 
                         x: rect.x, y: rect.y, 
                         width: rect.width, height: rect.height 
                     });
-                    f1Field.hidden();
+                    f1Field.setText(""); 
                 } catch (imgErr) { console.error("Fotoğraf basılamadı."); }
             }
 
+            form.flatten();
             const pdfBytes = await pdfDoc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
