@@ -22,8 +22,8 @@
     .event-type { font-weight: 800; text-transform: uppercase; font-size: 0.7rem; padding: 6px 14px; border-radius: 30px; background: rgba(255,255,255,0.05); }
     .event-desc { color: var(--text-s); font-size: 0.95rem; line-height: 1.6; margin: 15px 0; }
     .event-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem; color: var(--text-s); border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px; }
-    .img-container { margin-top: 15px; border-radius: 15px; overflow: hidden; border: 1px solid var(--border); width: fit-content; }
-    .event-card img { max-width: 200px; display: block; cursor: zoom-in; }
+    .img-container { margin-top: 15px; border-radius: 15px; overflow: hidden; border: 1px solid var(--border); width: 200px; height: 120px; background: #000; }
+    .event-card img { width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; }
     .action-group { display: flex; gap: 10px; margin-top: 20px; }
     .btn { padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; border: none; transition: 0.3s; text-transform: uppercase; }
     .btn-pdf { background: var(--success); color: #000; }
@@ -41,7 +41,7 @@
 
 <div id="loadingLayer">
     <div class="loader"></div>
-    <p style="margin-top:20px; font-weight: 800; color: var(--accent); letter-spacing: 3px;">CGA SİSTEM YÜKLENİYOR</p>
+    <p style="margin-top:20px; font-weight: 800; color: var(--accent); letter-spacing: 3px;">VERİLER ÇEKİLİYOR...</p>
 </div>
 
 <div class="header-area">
@@ -60,7 +60,7 @@
     </select>
     <input type="date" id="filterStart">
     <input type="date" id="filterEnd">
-    <button id="resetFilters">Filtreleri Sıfırla</button>
+    <button id="resetFilters" class="btn" style="background:#30363d; color:white;">Filtreleri Sıfırla</button>
 </div>
 
 <div id="message"></div>
@@ -76,9 +76,9 @@
 <div id="deleteModal">
     <div id="modalContent" style="text-align:center;">
         <h2 style="color:var(--danger)">Olayı Sil?</h2>
-        <p id="deleteText" style="color:var(--text-s)"></p>
+        <p style="color:var(--text-s)">Bu işlem geri alınamaz.</p>
         <div style="display:flex; gap:10px; justify-content:center; margin-top:30px;">
-            <button id="confirmDeleteBtn" class="btn" style="background:var(--danger); color:#fff; width:120px;">EVET, SİL</button>
+            <button id="confirmDeleteBtn" class="btn" style="background:var(--danger); color:#fff; width:120px;">SİL</button>
             <button id="cancelDeleteBtn" class="btn" style="background:rgba(255,255,255,0.1); color:#fff; width:120px;">İPTAL</button>
         </div>
     </div>
@@ -87,6 +87,10 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getDatabase, ref, onValue, remove, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+let allEvents = [];
+let selectedEventToDelete = null;
+let db = null;
 
 async function initPage(){
     const merkezConfig = {
@@ -99,185 +103,153 @@ async function initPage(){
 
     const mApp = initializeApp(merkezConfig, "merkez");
     const sId = sessionStorage.getItem("selectedSiteId");
-    
     if(!sId) { window.location.href = "sirket.html"; return; }
 
-    const siteSnap = await get(ref(getDatabase(mApp), `sites/${sId}/config`));
-    const db = getDatabase(initializeApp(siteSnap.val(), sId));
+    try {
+        const siteSnap = await get(ref(getDatabase(mApp), `sites/${sId}/config`));
+        const siteConfig = siteSnap.val();
+        const siteApp = initializeApp(siteConfig, sId);
+        db = getDatabase(siteApp);
 
-    const eventsContainer = document.getElementById('eventsContainer');
-    const filterUser = document.getElementById('filterUser');
-    const filterType = document.getElementById('filterType');
-    
-    let allEvents = [];
-    let selectedEventToDelete = null;
-
-    document.getElementById('logoutBtn').onclick = () => window.location.href = "sirket.html";
-    document.getElementById('resetFilters').onclick = () => {
-        document.querySelectorAll('.filters input').forEach(i => i.value = '');
-        filterUser.value = ''; filterType.value = '';
-        renderEvents();
-    };
-
-    // --- TÜRKÇE KARAKTER DÖNÜŞTÜRÜCÜ (PDF UYUMLU) ---
-    function trToEn(text) {
-        if (!text) return "";
-        return text.toString()
-            .replace(/ı/g, 'i').replace(/İ/g, 'I')
-            .replace(/ş/g, 's').replace(/Ş/g, 'S')
-            .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
-            .replace(/ü/g, 'u').replace(/Ü/g, 'U')
-            .replace(/ö/g, 'o').replace(/Ö/g, 'O')
-            .replace(/ç/g, 'c').replace(/Ç/g, 'C');
-    }
-
-    // --- AKILLI PDF KAYDETME ---
-    async function savePDF(olay) {
-        try {
-            const { PDFDocument, rgb } = PDFLib;
-            const url = './sablon.pdf?v=' + new Date().getTime(); 
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("sablon.pdf bulunamadi!");
-            
-            const existingPdfBytes = await response.arrayBuffer();
-            const pdfDoc = await PDFDocument.load(existingPdfBytes);
-            const form = pdfDoc.getForm();
-            const pages = pdfDoc.getPages();
-            const firstPage = pages[0];
-
-            const güvenliYaz = (alanAdi, veri) => {
-                try {
-                    const field = form.getTextField(alanAdi);
-                    field.setMaxLength(undefined);
-                    field.setText(trToEn(veri));
-                } catch (e) { console.warn(`PDF'de "${alanAdi}" kutusu bulunamadi.`); }
-            };
-
-            // EŞLEŞTİRMELER
-            güvenliYaz('R1', olay.raporNo || "");                
-            güvenliYaz('G1', olay.location || "");              
-            güvenliYaz('T1', olay.location || "");              
-            güvenliYaz('T2', olay.konu || olay.type || "");      
-            güvenliYaz('T3', olay.date || "");                  
-            güvenliYaz('T4', olay.time || "");                  
-            güvenliYaz('A1', olay.guvenlik || olay.user || ""); 
-            
-            // OTOMATİK GÖREV YAZMA (A3)
-            güvenliYaz('A3', "GUVENLIK GOREVLISI");              
-            
-            güvenliYaz('Y1', olay.desc || olay.description || ""); 
-
-            // FOTOĞRAF (F1)
-            if (olay.photoData) {
-                try {
-                    const imageBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
-                    const jpgImage = await pdfDoc.embedJpg(imageBytes);
-                    const f1Field = form.getTextField('F1');
-                    const widgets = f1Field.acroField.getWidgets();
-                    if (widgets.length > 0) {
-                        const rect = widgets[0].getRectangle();
-                        firstPage.drawImage(jpgImage, {
-                            x: rect.x, y: rect.y,
-                            width: rect.width, height: rect.height
-                        });
-                        f1Field.setText("");
+        // TEK SEFERDE TÜM VERİYİ DİNLE (HIZIN KAYNAĞI)
+        onValue(ref(db, 'securityEvents'), snap => {
+            allEvents = [];
+            if(snap.exists()){
+                const data = snap.val();
+                for(let u in data){
+                    for(let k in data[u]){
+                        allEvents.push({...data[u][k], user:u, key:k});
                     }
-                } catch (imgErr) { console.warn("Fotoğraf F1 kutusuna basılamadı."); }
-            }
-
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `CGA_Rapor_${olay.raporNo || olay.date}.pdf`;
-            link.click();
-        } catch (err) {
-            console.error("PDF İşlem Hatası:", err);
-            alert("Sistem Hatası: " + err.message);
-        }
-    }
-
-    function renderEvents(){
-        eventsContainer.innerHTML = '';
-        let filtered = allEvents;
-        if(filterUser.value) filtered = filtered.filter(e => e.user === filterUser.value);
-        if(filterType.value) filtered = filtered.filter(e => e.type === filterType.value);
-        if(document.getElementById('filterStart').value){
-            const s = new Date(document.getElementById('filterStart').value);
-            filtered = filtered.filter(e => new Date(e.date.split('.').reverse().join('-')) >= s);
-        }
-
-        if(filtered.length === 0){
-            document.getElementById('message').innerHTML = `<p style="text-align:center; color:var(--text-s); margin-top:50px;">Kayıtlı olay bulunamadı.</p>`;
-            return;
-        }
-        document.getElementById('message').innerHTML = '';
-        
-        filtered.sort((a,b) => (b.raporNo || 0) - (a.raporNo || 0)).forEach(olay => {
-            const card = document.createElement('div');
-            card.className = 'event-card';
-            card.innerHTML = `
-                <div class="event-header">
-                    <span class="event-user">${olay.user}</span>
-                    <span class="event-type">${olay.konu || olay.type}</span>
-                </div>
-                <div class="event-desc">${olay.desc || olay.description}</div>
-                <div class="event-meta">
-                    <span>📍 ${olay.location}</span>
-                    <span style="text-align:right;">📅 ${olay.date} | ${olay.time || ''}</span>
-                </div>
-                ${olay.photoData ? `<div class="img-container"><img src="${olay.photoData}" class="zoomImg"></div>` : ''}
-                <div class="action-group">
-                    <button class="btn btn-pdf">PDF RAPORU AL</button>
-                    <button class="btn btn-delete">SİL</button>
-                </div>
-            `;
-            card.querySelector('.btn-pdf').onclick = () => savePDF(olay);
-            card.querySelector('.btn-delete').onclick = () => {
-                selectedEventToDelete = olay;
-                document.getElementById('deleteModal').style.display = 'flex';
-            };
-            if(olay.photoData) {
-                card.querySelector('.zoomImg').onclick = () => {
-                    document.getElementById('modalText').innerHTML = `<img src="${olay.photoData}" style="width:100%; border-radius:15px;">`;
-                    document.getElementById('modal').style.display = 'flex';
-                };
-            }
-            eventsContainer.appendChild(card);
-        });
-    }
-
-    onValue(ref(db, 'securityEvents'), snap => {
-        allEvents = [];
-        if(snap.exists()){
-            const data = snap.val();
-            for(let u in data){
-                for(let k in data[u]){
-                    allEvents.push({...data[u][k], user:u, key:k});
                 }
+                updateUserFilter();
             }
-            const users = [...new Set(allEvents.map(e => e.user))];
-            filterUser.innerHTML = '<option value="">Tüm Personeller</option>';
-            users.forEach(u => filterUser.innerHTML += `<option value="${u}">${u}</option>`);
-        }
-        renderEvents();
-        document.getElementById('loadingLayer').style.display = 'none';
-    });
-
-    [filterUser, filterType, document.getElementById('filterStart'), document.getElementById('filterEnd')].forEach(el => {
-        el.addEventListener('change', renderEvents);
-    });
-
-    document.getElementById('modalClose').onclick = () => document.getElementById('modal').style.display = 'none';
-    document.getElementById('cancelDeleteBtn').onclick = () => document.getElementById('deleteModal').style.display = 'none';
-    document.getElementById('confirmDeleteBtn').onclick = async () => {
-        if(selectedEventToDelete){
-            await remove(ref(db, `securityEvents/${selectedEventToDelete.user}/${selectedEventToDelete.key}`));
-            document.getElementById('deleteModal').style.display = 'none';
-        }
-    };
+            renderEvents();
+            document.getElementById('loadingLayer').style.display = 'none';
+        });
+    } catch (e) {
+        console.error(e);
+        alert("Bağlantı hatası!");
+    }
 }
-initPage();
-</script>
-</body>
-</html>
+
+function updateUserFilter() {
+    const filterUser = document.getElementById('filterUser');
+    const users = [...new Set(allEvents.map(e => e.user))];
+    const currentVal = filterUser.value;
+    filterUser.innerHTML = '<option value="">Tüm Personeller</option>';
+    users.forEach(u => {
+        filterUser.innerHTML += `<option value="${u}" ${u === currentVal ? 'selected' : ''}>${u}</option>`;
+    });
+}
+
+function trToEn(text) {
+    if (!text) return "";
+    return text.toString()
+        .replace(/ı/g, 'i').replace(/İ/g, 'I').replace(/ş/g, 's').replace(/Ş/g, 'S')
+        .replace(/ğ/g, 'g').replace(/Ğ/g, 'G').replace(/ü/g, 'u').replace(/Ü/g, 'U')
+        .replace(/ö/g, 'o').replace(/Ö/g, 'O').replace(/ç/g, 'c').replace(/Ç/g, 'C');
+}
+
+async function savePDF(olay) {
+    try {
+        const { PDFDocument } = PDFLib;
+        const resp = await fetch('./sablon.pdf?v=' + Date.now());
+        if (!resp.ok) throw new Error("Şablon bulunamadı.");
+        
+        const pdfDoc = await PDFDocument.load(await resp.arrayBuffer());
+        const form = pdfDoc.getForm();
+        
+        const fill = (key, val) => {
+            try { form.getTextField(key).setText(trToEn(val)); } catch(e) {}
+        };
+
+        fill('R1', olay.raporNo);
+        fill('G1', olay.location);
+        fill('T1', olay.location);
+        fill('T2', olay.konu || olay.type);
+        fill('T3', olay.date);
+        fill('T4', olay.time);
+        fill('A1', olay.user);
+        fill('A3', "GÜVENLİK GÖREVLİSİ");
+        fill('Y1', olay.desc || olay.description);
+
+        if (olay.photoData) {
+            try {
+                const imgBytes = await fetch(olay.photoData).then(r => r.arrayBuffer());
+                const img = await pdfDoc.embedJpg(imgBytes);
+                const f1 = form.getTextField('F1');
+                const rect = f1.acroField.getWidgets()[0].getRectangle();
+                pdfDoc.getPages()[0].drawImage(img, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+                f1.setText("");
+            } catch(e) { console.warn("Foto eklenemedi"); }
+        }
+
+        const blob = new Blob([await pdfDoc.save()], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `CGA_${olay.raporNo || 'Rapor'}.pdf`;
+        link.click();
+    } catch (err) { alert("PDF Hatası: " + err.message); }
+}
+
+function renderEvents(){
+    const container = document.getElementById('eventsContainer');
+    const fUser = document.getElementById('filterUser').value;
+    const fType = document.getElementById('filterType').value;
+    const fStart = document.getElementById('filterStart').value;
+    const fEnd = document.getElementById('filterEnd').value;
+
+    container.innerHTML = '';
+
+    let filtered = allEvents.filter(e => {
+        const dateObj = new Date(e.date.split('.').reverse().join('-'));
+        return (!fUser || e.user === fUser) &&
+               (!fType || (e.konu === fType || e.type === fType)) &&
+               (!fStart || dateObj >= new Date(fStart)) &&
+               (!fEnd || dateObj <= new Date(fEnd));
+    });
+
+    if(filtered.length === 0) {
+        document.getElementById('message').innerHTML = '<p style="text-align:center; opacity:0.5;">Kayıt bulunamadı.</p>';
+        return;
+    }
+    document.getElementById('message').innerHTML = '';
+
+    filtered.sort((a,b) => (b.raporNo || 0) - (a.raporNo || 0)).forEach(olay => {
+        const card = document.createElement('div');
+        card.className = 'event-card';
+        card.innerHTML = `
+            <div class="event-header">
+                <span class="event-user">${olay.user}</span>
+                <span class="event-type">${olay.konu || olay.type}</span>
+            </div>
+            <div class="event-desc">${olay.desc || olay.description || ''}</div>
+            <div class="event-meta">
+                <span>📍 ${olay.location || '-'}</span>
+                <span style="text-align:right;">📅 ${olay.date} ${olay.time || ''}</span>
+            </div>
+            ${olay.photoData ? `<div class="img-container"><img src="${olay.photoData}" loading="lazy" class="zoom"></div>` : ''}
+            <div class="action-group">
+                <button class="btn btn-pdf">PDF</button>
+                <button class="btn btn-delete">SİL</button>
+            </div>
+        `;
+        
+        card.querySelector('.btn-pdf').onclick = () => savePDF(olay);
+        card.querySelector('.btn-delete').onclick = () => {
+            selectedEventToDelete = olay;
+            document.getElementById('deleteModal').style.display = 'flex';
+        };
+        if(olay.photoData) {
+            card.querySelector('.zoom').onclick = () => {
+                document.getElementById('modalText').innerHTML = `<img src="${olay.photoData}" style="width:100%; border-radius:15px;">`;
+                document.getElementById('modal').style.display = 'flex';
+            };
+        }
+        container.appendChild(card);
+    });
+}
+
+// Olay Dinleyiciler
+document.getElementById('logoutBtn').onclick = () => window.location.href = "sirket.html";
+document.getElementById('
