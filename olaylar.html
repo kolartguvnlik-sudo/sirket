@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CGA GÜVENLİK | Olay Takip Merkezi</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-<script src="https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.min.js"></script>
 
 <style>
     :root { --bg: #0a0c10; --card-bg: #12151c; --accent: #00d2ff; --danger: #ff4d4d; --warning: #ffcc00; --success: #00ff88; --text: #e6edf3; --text-s: #8b949e; --border: rgba(255, 255, 255, 0.08); }
@@ -85,9 +83,11 @@ async function initPage(){
     const filterType = document.getElementById('filterType');
     let allEvents = [];
 
-    // Harf bozmayan temiz fonksiyon
-    function formatTextClean(text) {
-        return text ? text.toString().toUpperCase() : "";
+    // SENİN ÇÖZÜMÜN: Türkçe Karakterleri Güvenli Hale Getirme
+    function fixTurkishChars(str) {
+        if (!str) return "";
+        const map = {'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'};
+        return str.toString().replace(/[çÇğĞıİöÖşŞüÜ]/g, m => map[m]).toUpperCase();
     }
 
     async function savePDF(olay) {
@@ -98,13 +98,6 @@ async function initPage(){
             if(!response.ok) throw new Error("sablon.pdf bulunamadi!");
             
             const pdfDoc = await PDFDocument.load(await response.arrayBuffer());
-            
-            // --- TÜRKÇE FONT YÜKLEME ---
-            pdfDoc.registerFontkit(fontkit);
-            const fontBytes = await fetch('https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/Roboto-Regular.ttf').then(res => res.arrayBuffer());
-            const customFont = await pdfDoc.embedFont(fontBytes);
-            // ---------------------------
-
             const form = pdfDoc.getForm();
             const pages = pdfDoc.getPages();
             const fields = form.getFields();
@@ -129,9 +122,8 @@ async function initPage(){
                 if (mapping[name] !== undefined) {
                     try {
                         const textField = form.getTextField(name);
-                        textField.setText(formatTextClean(mapping[name]));
-                        // Fontu buraya zorla gömüyoruz
-                        textField.updateAppearances(customFont);
+                        // SENİN ÇÖZÜMÜNÜ BURADA UYGULUYORUZ
+                        textField.setText(fixTurkishChars(mapping[name]));
                     } catch (e) { 
                         console.warn(name + " alanına yazılamadı."); 
                     }
