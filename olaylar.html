@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CGA GÜVENLİK | Olay Takip Merkezi</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<script src="https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.min.js"></script>
 
 <style>
     :root { --bg: #0a0c10; --card-bg: #12151c; --accent: #00d2ff; --danger: #ff4d4d; --warning: #ffcc00; --success: #00ff88; --text: #e6edf3; --text-s: #8b949e; --border: rgba(255, 255, 255, 0.08); }
@@ -27,7 +29,6 @@
     .action-group { display: flex; gap: 10px; margin-top: 20px; }
     .btn { padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; border: none; transition: 0.3s; text-transform: uppercase; }
     .btn-pdf { background: var(--success); color: #000; }
-    .btn-delete { background: rgba(255, 77, 77, 0.1); color: var(--danger); border: 1px solid rgba(255, 77, 77, 0.2); }
     #logoutBtn { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; }
     #loadingLayer { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     .loader { width: 50px; height: 50px; border: 3px solid #161b22; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
@@ -61,7 +62,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getDatabase, ref, onValue, remove, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 async function initPage(){
     const merkezConfig = {
@@ -84,22 +85,12 @@ async function initPage(){
     const filterType = document.getElementById('filterType');
     let allEvents = [];
 
-    document.getElementById('logoutBtn').onclick = () => window.location.href = "sirket.html";
-    document.getElementById('resetFilters').onclick = () => { filterUser.value = ''; filterType.value = ''; renderEvents(); };
-
-    function formatText(text) {
-        if (!text) return "";
-        return text.toString()
-            .replace(/ı/g, 'I').replace(/i/g, 'I').replace(/İ/g, 'I')
-            .replace(/ş/g, 'S').replace(/Ş/g, 'S')
-            .replace(/ğ/g, 'G').replace(/Ğ/g, 'G')
-            .replace(/ü/g, 'U').replace(/Ü/g, 'U')
-            .replace(/ö/g, 'O').replace(/Ö/g, 'O')
-            .replace(/ç/g, 'C').replace(/Ç/g, 'C')
-            .toUpperCase();
+    // Harf bozmayan temiz fonksiyon
+    function formatTextClean(text) {
+        return text ? text.toString().toUpperCase() : "";
     }
 
-async function savePDF(olay) {
+    async function savePDF(olay) {
         try {
             const { PDFDocument } = PDFLib;
             const url = 'sablon.pdf?v=' + new Date().getTime(); 
@@ -107,19 +98,23 @@ async function savePDF(olay) {
             if(!response.ok) throw new Error("sablon.pdf bulunamadi!");
             
             const pdfDoc = await PDFDocument.load(await response.arrayBuffer());
+            
+            // --- TÜRKÇE FONT YÜKLEME ---
+            pdfDoc.registerFontkit(fontkit);
+            const fontBytes = await fetch('https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/Roboto-Regular.ttf').then(res => res.arrayBuffer());
+            const customFont = await pdfDoc.embedFont(fontBytes);
+            // ---------------------------
+
             const form = pdfDoc.getForm();
             const pages = pdfDoc.getPages();
-
-            // --- TÜM ALANLARI GEZEREK EŞLEŞTİRME YAP ---
             const fields = form.getFields();
-            
-            // Firebase verilerini PDF alan isimleriyle eşleştiriyoruz
+
             const mapping = {
-                'P1': olay.raporNo,         // Rapor No 1
-                'Z1': olay.raporNo,         // Rapor No 2 (Senin istediğin Z1)
-                'SIRA': olay.raporNo,       // Sıra No
-                'P2': olay.date,            // Tarih 1
-                'Z3': olay.date,            // Tarih 2 (Senin istediğin Z3)
+                'P1': olay.raporNo,
+                'Z1': olay.raporNo,
+                'SIRA': olay.raporNo,
+                'P2': olay.date,
+                'Z3': olay.date,
                 'G1': olay.location,
                 'T1': olay.tespitYeri,
                 'T2': olay.konu,
@@ -131,18 +126,18 @@ async function savePDF(olay) {
 
             fields.forEach(field => {
                 const name = field.getName();
-                // Eğer PDF'deki alan adı mapping listemizde varsa yaz
                 if (mapping[name] !== undefined) {
                     try {
                         const textField = form.getTextField(name);
-                        textField.setText(formatText(mapping[name]));
+                        textField.setText(formatTextClean(mapping[name]));
+                        // Fontu buraya zorla gömüyoruz
+                        textField.updateAppearances(customFont);
                     } catch (e) { 
                         console.warn(name + " alanına yazılamadı."); 
                     }
                 }
             });
 
-            // FOTOĞRAF (F1)
             if (olay.photoData) {
                 try {
                     const imgBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
@@ -157,7 +152,7 @@ async function savePDF(olay) {
                 } catch (imgErr) { console.error("Fotoğraf basılamadı."); }
             }
 
-            form.flatten(); // Formu düzleştir (düzenlenemez yap)
+            form.flatten();
             const pdfBytes = await pdfDoc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
@@ -211,6 +206,8 @@ async function savePDF(olay) {
         document.getElementById('loadingLayer').style.display = 'none';
     });
 
+    document.getElementById('logoutBtn').onclick = () => window.location.href = "sirket.html";
+    document.getElementById('resetFilters').onclick = () => { filterUser.value = ''; filterType.value = ''; renderEvents(); };
     filterUser.onchange = renderEvents;
     filterType.onchange = renderEvents;
 }
@@ -218,4 +215,3 @@ initPage();
 </script>
 </body>
 </html>
-
