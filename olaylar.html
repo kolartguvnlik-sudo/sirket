@@ -53,10 +53,9 @@
     <select id="filterUser"><option value="">Tüm Personeller</option></select>
     <select id="filterType">
         <option value="">Tüm Olay Türleri</option>
-        <option value="Hırsızlık">HIRSİZLİK</option>
-        <option value="Gürültü">GÜRÜLTÜ</option>
-        <option value="Yangın">YANGİN</option>
-        <option value="Şüpheli Kişi">SÜPHELİ KİSİ</option>
+        <option value="Kapı açık">KAPI AÇIK</option>
+        <option value="Hırsızlık">HIRSİZLIK</option>
+        <option value="Şüpheli Şahıs">SÜPHELİ SAHIS</option>
     </select>
     <input type="date" id="filterStart">
     <input type="date" id="filterEnd">
@@ -114,7 +113,7 @@ async function initPage(){
 
     document.getElementById('logoutBtn').onclick = () => window.location.href = "sirket.html";
 
-    // --- TÜRKÇE KARAKTER DÜZELTME VE BÜYÜTME ---
+    // --- TÜRKÇE KARAKTER TEMİZLEME VE BÜYÜTME ---
     function formatText(text) {
         if (!text) return "";
         return text.toString()
@@ -127,7 +126,7 @@ async function initPage(){
             .toUpperCase();
     }
 
-    // --- PDF KAYDETME ---
+    // --- PDF KAYDETME (FIREBASE YAPISINA GÖRE) ---
     async function savePDF(olay) {
         try {
             const { PDFDocument } = PDFLib;
@@ -149,18 +148,18 @@ async function initPage(){
                 } catch (e) { console.warn(alan + " bulunamadi."); }
             };
 
-            // SENİN DETAYLARIN (TAM EŞLEŞME)
-            yaz('R1', olay.raporNo || "");                    // Rapor no R1
-            yaz('G1', olay.location || "");                  // Görev yeri G1
-            yaz('T1', olay.location || "");                  // Tespitin yeri T1
-            yaz('T2', olay.konu || olay.type || "");          // Tespitin konusu T2
-            yaz('T3', olay.date || "");                      // Tarih T3
-            yaz('T4', olay.time || "");                      // Saat T4
-            yaz('A1', olay.guvenlik || olay.user || "");     // Ad A1
-            yaz('A3', "GUVENLIK GOREVLISI");                  // Görevi A3 (OTOMATİK)
-            yaz('Y1', olay.desc || olay.description || "");   // Yorum Y1
+            // SENİN FIREBASE YAPINA GÖRE EŞLEŞTİRME
+            yaz('R1', olay.raporNo || "");          // raporNo -> R1
+            yaz('G1', olay.location || "");         // location -> G1
+            yaz('T1', olay.tespitYeri || "");       // tespitYeri -> T1
+            yaz('T2', olay.konu || "");             // konu -> T2
+            yaz('T3', olay.date || "");             // date -> T3
+            yaz('T4', olay.time || "");             // time -> T4
+            yaz('A1', olay.user || "");             // Firebase anahtarı (Personel Adı) -> A1
+            yaz('A3', "GUVENLIK GOREVLISI");        // Otomatik -> A3
+            yaz('Y1', olay.desc || "");             // desc -> Y1
 
-            // --- FOTOĞRAF (F1) ---
+            // FOTOĞRAF (F1 KUTUSUNA)
             if (olay.photoData) {
                 try {
                     const imageBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
@@ -193,7 +192,7 @@ async function initPage(){
         eventsContainer.innerHTML = '';
         let filtered = allEvents;
         if(filterUser.value) filtered = filtered.filter(e => e.user === filterUser.value);
-        if(filterType.value) filtered = filtered.filter(e => e.type === filterType.value);
+        if(filterType.value) filtered = filtered.filter(e => e.konu === filterType.value);
         
         filtered.sort((a,b) => (b.raporNo || 0) - (a.raporNo || 0)).forEach(olay => {
             const card = document.createElement('div');
@@ -201,12 +200,12 @@ async function initPage(){
             card.innerHTML = `
                 <div class="event-header">
                     <span class="event-user">${olay.user}</span>
-                    <span class="event-type">${olay.konu || olay.type}</span>
+                    <span class="event-type">${olay.konu}</span>
                 </div>
-                <div class="event-desc">${olay.desc || olay.description}</div>
+                <div class="event-desc">${olay.desc}</div>
                 <div class="event-meta">
-                    <span>📍 ${olay.location}</span>
-                    <span style="text-align:right;">📅 ${olay.date} | ${olay.time || ''}</span>
+                    <span>📍 ${olay.location} (${olay.tespitYeri})</span>
+                    <span style="text-align:right;">📅 ${olay.date} | ${olay.time}</span>
                 </div>
                 ${olay.photoData ? `<div class="img-container"><img src="${olay.photoData}" class="zoomImg"></div>` : ''}
                 <div class="action-group">
@@ -243,6 +242,12 @@ async function initPage(){
     [filterUser, filterType].forEach(el => el.onchange = renderEvents);
     document.getElementById('modalClose').onclick = () => document.getElementById('modal').style.display = 'none';
     document.getElementById('cancelDeleteBtn').onclick = () => document.getElementById('deleteModal').style.display = 'none';
+    document.getElementById('confirmDeleteBtn').onclick = async () => {
+        if(selectedEventToDelete){
+            await remove(ref(db, `securityEvents/${selectedEventToDelete.user}/${selectedEventToDelete.key}`));
+            document.getElementById('deleteModal').style.display = 'none';
+        }
+    };
 }
 initPage();
 </script>
