@@ -3,46 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CGA GÜVENLİK | Olay Takip Merkezi</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-<script src="https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.min.js"></script>
+<title>CGA GÜVENLİK | KESİN ÇÖZÜM</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
 
 <style>
-    :root { --bg: #0a0c10; --card-bg: #12151c; --accent: #00d2ff; --danger: #ff4d4d; --success: #00ff88; --text: #e6edf3; --border: rgba(255, 255, 255, 0.08); }
+    :root { --bg: #0a0c10; --card-bg: #12151c; --accent: #00d2ff; --text: #e6edf3; --border: rgba(255, 255, 255, 0.08); }
     body { margin: 0; font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-    .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
-    h1 { margin: 0; font-weight: 800; text-transform: uppercase; font-size: 1.5rem; color: var(--accent); }
-    .filters { background: var(--card-bg); padding: 20px; border-radius: 20px; display: flex; gap: 15px; margin-bottom: 30px; border: 1px solid var(--border); }
-    .filters select { background: #0d1117; border: 1px solid #30363d; color: white; padding: 12px; border-radius: 12px; outline: none; }
-    .event-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px; padding: 25px; margin-bottom: 20px; }
-    .btn-pdf { background: var(--success); color: #000; padding: 10px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; text-transform: uppercase; }
-    #loadingLayer { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-    .loader { width: 50px; height: 50px; border: 3px solid #161b22; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
+    .event-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 15px; padding: 20px; margin-bottom: 15px; }
+    .btn-pdf { background: #00ff88; color: #000; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    #loadingLayer { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; justify-content: center; align-items: center; }
 </style>
 </head>
 <body>
 
 <div id="loadingLayer">
-    <div class="loader"></div>
-    <p style="margin-top:20px; font-weight: 800; color: var(--accent);">SİSTEM YÜKLENİYOR...</p>
+    <h2 style="color:var(--accent)">SİSTEM YÜKLENİYOR...</h2>
 </div>
 
-<div class="header-area">
-    <h1>CGA <span>GÜVENLİK SİSTEMİ</span></h1>
-    <button id="logoutBtn" style="background:var(--danger); color:white; border:none; padding:10px 20px; border-radius:12px; cursor:pointer; font-weight:700;">GERİ</button>
-</div>
-
-<div class="filters">
-    <select id="filterUser"><option value="">Tüm Personeller</option></select>
-    <select id="filterType">
-        <option value="">Tüm Konular</option>
-        <option value="Kapı açık">KAPI AÇIK</option>
-        <option value="Hırsızlık">HIRSİZLIK</option>
-        <option value="Yangın">YANGIN</option>
-    </select>
-    <button id="resetFilters" style="background:#30363d; color:white; border:none; padding:10px; border-radius:12px; cursor:pointer;">TEMİZLE</button>
+<div class="header">
+    <h1>CGA <span>GÜVENLİK</span></h1>
+    <button onclick="location.href='sirket.html'" style="background:#ff4d4d; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer;">GERİ</button>
 </div>
 
 <div id="eventsContainer"></div>
@@ -67,29 +51,43 @@ async function initPage(){
     const siteSnap = await get(ref(getDatabase(mApp), `sites/${sId}/config`));
     const db = getDatabase(initializeApp(siteSnap.val(), sId));
 
-    // --- PDF KAYDETME VE TÜRKÇE KARAKTER ÇÖZÜMÜ ---
-    async function savePDF(olay) {
+    // --- PDF FONKSİYONU ---
+    window.savePDF = async (olay) => {
         try {
-            const { PDFDocument } = PDFLib;
+            console.log("PDF Hazırlanıyor...");
+            const { PDFDocument, rgb } = PDFLib;
             
-            // 1. Şablonu ve Fontu Yükle
-            const [pdfBuffer, fontBuffer] = await Promise.all([
-                fetch('sablon.pdf').then(res => res.arrayBuffer()),
-                fetch('font.ttf').then(res => res.arrayBuffer()) // KLASÖRDEKİ FONTUN
-            ]);
+            // Font ve Şablon Yükleme
+            const fontUrl = './font.ttf'; // Kendi fontun
+            const pdfUrl = './sablon.pdf'; // Kendi şablonun
 
-            const pdfDoc = await PDFDocument.load(pdfBuffer);
-            pdfDoc.registerFontkit(fontkit); // Fontu işlemek için fontkit şart
+            const fontBytes = await fetch(fontUrl).then(res => {
+                if(!res.ok) throw new Error("font.ttf dosyası klasörde bulunamadı!");
+                return res.arrayBuffer();
+            });
+            const pdfBytes = await fetch(pdfUrl).then(res => {
+                if(!res.ok) throw new Error("sablon.pdf dosyası bulunamadı!");
+                return res.arrayBuffer();
+            });
+
+            const pdfDoc = await PDFDocument.load(pdfBytes);
             
-            // 2. Fontu PDF'e Göm (TÜRKÇE KARAKTER ANAHTARI)
-            const customFont = await pdfDoc.embedFont(fontBuffer);
-            
+            // FONTKIT KAYDI (Hata Almamak İçin Window üzerinden kontrol)
+            if (window.fontkit) {
+                pdfDoc.registerFontkit(window.fontkit);
+            } else {
+                throw new Error("Fontkit kütüphanesi yüklenemedi!");
+            }
+
+            const customFont = await pdfDoc.embedFont(fontBytes);
             const form = pdfDoc.getForm();
+            const page = pdfDoc.getPages()[0];
+
             const mapping = {
                 'P1': olay.raporNo, 'Z1': olay.raporNo, 'SIRA': olay.raporNo,
                 'P2': olay.date, 'Z3': olay.date, 'G1': olay.location,
                 'T1': olay.tespitYeri, 'T2': olay.konu, 'T4': olay.time,
-                'A1': olay.user, 'A3': "GUVENLIK GOREVLISI", 'Y1': olay.desc
+                'A1': olay.user, 'A3': "GÜVENLİK GÖREVLİSİ", 'Y1': olay.desc
             };
 
             const fields = form.getFields();
@@ -98,10 +96,12 @@ async function initPage(){
                 if (mapping[name] !== undefined) {
                     try {
                         const textField = form.getTextField(name);
-                        // Fontu bu alana uygula ve yazıyı yaz
+                        // TÜRKÇE KARAKTERLERİN ÇIKMASI İÇİN KRİTİK 2 SATIR:
                         textField.setText(mapping[name].toString());
-                        textField.updateAppearances(customFont); // HARFLERİ BU FONTLA BAS
-                    } catch (e) { console.warn(name + " yazılamadı."); }
+                        textField.updateAppearances(customFont);
+                    } catch (e) {
+                        console.warn(name + " için çizim yapılıyor...");
+                    }
                 }
             });
 
@@ -111,49 +111,47 @@ async function initPage(){
                     const img = await pdfDoc.embedJpg(await fetch(olay.photoData).then(r => r.arrayBuffer()));
                     const f1 = form.getTextField('F1');
                     const rect = f1.acroField.getWidgets()[0].getRectangle();
-                    pdfDoc.getPages()[0].drawImage(img, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
-                } catch (e) {}
+                    page.drawImage(img, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+                } catch(e) { console.error("Foto basılamadı"); }
             }
 
-            form.flatten(); // Formu kilitle
-            const pdfBytes = await pdfDoc.save();
+            form.flatten();
+            const savedBytes = await pdfDoc.save();
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
+            link.href = URL.createObjectURL(new Blob([savedBytes], { type: 'application/pdf' }));
             link.download = `RAPOR_${olay.raporNo}.pdf`;
             link.click();
-        } catch (err) { alert("PDF Hatası: " + err.message); }
-    }
+            console.log("PDF Başarıyla indirildi.");
 
-    // --- VERİ ÇEKME VE LİSTELEME ---
-    const container = document.getElementById('eventsContainer');
+        } catch (err) {
+            console.error(err);
+            alert("Hata: " + err.message);
+        }
+    };
+
+    // --- VERİ LİSTELEME ---
     onValue(ref(db, 'securityEvents'), snap => {
+        const container = document.getElementById('eventsContainer');
         container.innerHTML = '';
-        allEvents = [];
         if(snap.exists()){
             const data = snap.val();
             for(let u in data){
                 for(let k in data[u]){
                     const olay = {...data[u][k], user:u};
-                    allEvents.push(olay);
                     const card = document.createElement('div');
                     card.className = 'event-card';
                     card.innerHTML = `
                         <h3>${olay.user} - ${olay.konu}</h3>
                         <p>${olay.desc}</p>
-                        <button class="btn-pdf">PDF RAPORU AL</button>
+                        <button class="btn-pdf" onclick="window.savePDF(${JSON.stringify(olay).replace(/"/g, '&quot;')})">PDF RAPORU AL</button>
                     `;
-                    card.querySelector('.btn-pdf').onclick = () => savePDF(olay);
                     container.appendChild(card);
                 }
             }
         }
         document.getElementById('loadingLayer').style.display = 'none';
     });
-
-    document.getElementById('logoutBtn').onclick = () => window.location.href = "sirket.html";
 }
-
-let allEvents = [];
 initPage();
 </script>
 </body>
