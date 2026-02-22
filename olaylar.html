@@ -115,10 +115,10 @@ async function savePDF(olay) {
             
             // Firebase verilerini PDF alan isimleriyle eşleştiriyoruz
             const mapping = {
-                'R1': olay.raporNo,         // Rapor No 1
+                'P1': olay.raporNo,         // Rapor No 1
                 'Z1': olay.raporNo,         // Rapor No 2 (Senin istediğin Z1)
                 'SIRA': olay.raporNo,       // Sıra No
-                'T3': olay.date,            // Tarih 1
+                'P2': olay.date,            // Tarih 1
                 'Z3': olay.date,            // Tarih 2 (Senin istediğin Z3)
                 'G1': olay.location,
                 'T1': olay.tespitYeri,
