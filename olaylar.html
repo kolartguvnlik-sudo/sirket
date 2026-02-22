@@ -129,65 +129,68 @@ async function initPage(){
     // --- PDF KAYDETME (FIREBASE YAPISINA GÖRE) ---
 // --- PDF KAYDETME (TAM FIREBASE EŞLEŞTİRMESİ) ---
 async function savePDF(olay) {
-    try {
-        const { PDFDocument } = PDFLib;
-        const url = 'sablon.pdf?v=' + new Date().getTime(); 
-        const response = await fetch(url);
-        if(!response.ok) throw new Error("sablon.pdf bulunamadi!");
-        
-        const existingPdfBytes = await response.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(existingPdfBytes);
-        const form = pdfDoc.getForm();
-        const pages = pdfDoc.getPages();
-        const firstPage = pages[0];
+        try {
+            const { PDFDocument } = PDFLib;
+            const url = 'sablon.pdf?v=' + new Date().getTime(); 
+            const response = await fetch(url);
+            if(!response.ok) throw new Error("sablon.pdf bulunamadi!");
+            
+            const existingPdfBytes = await response.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(existingPdfBytes);
+            const form = pdfDoc.getForm();
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
 
-        const yaz = (alan, metin) => {
-            try {
-                const field = form.getTextField(alan);
-                field.setMaxLength(undefined);
-                field.setText(formatText(metin));
-            } catch (e) { console.warn(alan + " kutusu bulunamadi."); }
-        };
+            const yaz = (alan, metin) => {
+                try {
+                    const field = form.getTextField(alan);
+                    field.setMaxLength(undefined);
+                    field.setText(formatText(metin));
+                } catch (e) { console.warn(alan + " kutusu PDF formunda bulunamadı, ismini kontrol et!"); }
+            };
 
-        // --- SENİN İSTEDİĞİN TAM EŞLEŞMELER ---
-        yaz('R1', olay.raporNo || "");          // raporNo -> R1 (Hem rapor no hem sıra)
-        yaz('G1', olay.location || "");         // location -> G1
-        yaz('T1', olay.tespitYeri || "");       // tespitYeri -> T1
-        yaz('T2', olay.konu || "");             // konu -> T2
-        yaz('T3', olay.date || "");             // date -> T3 (22.02.2026 buraya basılır)
-        yaz('T4', olay.time || "");             // time -> T4
-        yaz('A1', olay.user || "");             // Personel ismi -> A1
-        yaz('A3', "GUVENLIK GOREVLISI");        // Otomatik Sabit -> A3
-        yaz('Y1', olay.desc || "");             // desc -> Y1
+            // --- GÖRSELDEKİ PDF ŞABLONUNA GÖRE TAM EŞLEŞTİRME ---
+            yaz('R1', olay.raporNo || "");          // RAPOR NO (En üst sol)
+            yaz('G1', olay.location || "");         // GÖREV YERİ
+            yaz('T1', olay.tespitYeri || "");       // TESPİTİN YERİ
+            yaz('T2', olay.konu || "");             // TESPİTİN KONUSU
+            yaz('T3', olay.date || "");             // TARİH (Sağ üst)
+            yaz('T4', olay.time || "");             // SAAT
+            yaz('SIRA', olay.raporNo || "");        // SIRA (Sağ orta - Rapor no ile aynı)
+            
+            yaz('A1', olay.user || "");             // RAPORU HAZIRLAYAN ADI (A3 yazan yer)
+            yaz('A3', "GUVENLIK GOREVLISI");        // GÖREVİ (Sabit)
+            
+            yaz('Y1', olay.desc || "");             // BÜYÜK YORUM ALANI
 
-        // --- FOTOĞRAF (F1) ---
-        if (olay.photoData) {
-            try {
-                const imageBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
-                const jpgImage = await pdfDoc.embedJpg(imageBytes);
-                const f1Field = form.getTextField('F1');
-                const widgets = f1Field.acroField.getWidgets();
-                if (widgets.length > 0) {
-                    const rect = widgets[0].getRectangle();
-                    firstPage.drawImage(jpgImage, {
-                        x: rect.x, y: rect.y,
-                        width: rect.width, height: rect.height
-                    });
-                    f1Field.setText(""); 
-                }
-            } catch (imgErr) { console.error("Foto işleme hatası"); }
+            // --- FOTOĞRAF (F1) ---
+            if (olay.photoData) {
+                try {
+                    const imageBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
+                    const jpgImage = await pdfDoc.embedJpg(imageBytes);
+                    const f1Field = form.getTextField('F1');
+                    const widgets = f1Field.acroField.getWidgets();
+                    if (widgets.length > 0) {
+                        const rect = widgets[0].getRectangle();
+                        firstPage.drawImage(jpgImage, {
+                            x: rect.x, y: rect.y,
+                            width: rect.width, height: rect.height
+                        });
+                        f1Field.setText(""); 
+                    }
+                } catch (imgErr) { console.error("Fotoğraf PDF'e işlenemedi."); }
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `CGA_RAPOR_${olay.raporNo}.pdf`;
+            link.click();
+        } catch (err) {
+            alert("Sistem Hatası: " + err.message);
         }
-
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `CGA_RAPOR_${olay.raporNo}.pdf`;
-        link.click();
-    } catch (err) {
-        alert("Hata: " + err.message);
     }
-}
 
     function renderEvents(){
         eventsContainer.innerHTML = '';
