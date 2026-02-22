@@ -99,7 +99,7 @@ async function initPage(){
             .toUpperCase();
     }
 
-    async function savePDF(olay) {
+async function savePDF(olay) {
         try {
             const { PDFDocument } = PDFLib;
             const url = 'sablon.pdf?v=' + new Date().getTime(); 
@@ -110,17 +110,19 @@ async function initPage(){
             const form = pdfDoc.getForm();
             const pages = pdfDoc.getPages();
 
-            // --- SENİN BULDUĞUN ÇÖZÜM: TÜM ALANLARI DOLAŞ ---
+            // --- TÜM ALANLARI GEZEREK EŞLEŞTİRME YAP ---
             const fields = form.getFields();
             
-            // Eşleştirme Listesi (Firebase -> PDF Alanı)
+            // Firebase verilerini PDF alan isimleriyle eşleştiriyoruz
             const mapping = {
-                'R1': olay.raporNo,
-                'SIRA': olay.raporNo,
+                'R1': olay.raporNo,         // Rapor No 1
+                'Z1': olay.raporNo,         // Rapor No 2 (Senin istediğin Z1)
+                'SIRA': olay.raporNo,       // Sıra No
+                'T3': olay.date,            // Tarih 1
+                'Z3': olay.date,            // Tarih 2 (Senin istediğin Z3)
                 'G1': olay.location,
                 'T1': olay.tespitYeri,
                 'T2': olay.konu,
-                'T3': olay.date,
                 'T4': olay.time,
                 'A1': olay.user,
                 'A3': "GUVENLIK GOREVLISI",
@@ -129,11 +131,14 @@ async function initPage(){
 
             fields.forEach(field => {
                 const name = field.getName();
+                // Eğer PDF'deki alan adı mapping listemizde varsa yaz
                 if (mapping[name] !== undefined) {
                     try {
                         const textField = form.getTextField(name);
                         textField.setText(formatText(mapping[name]));
-                    } catch (e) { console.warn(name + " basılamadı"); }
+                    } catch (e) { 
+                        console.warn(name + " alanına yazılamadı."); 
+                    }
                 }
             });
 
@@ -144,12 +149,15 @@ async function initPage(){
                     const jpgImage = await pdfDoc.embedJpg(imgBytes);
                     const f1Field = form.getTextField('F1');
                     const rect = f1Field.acroField.getWidgets()[0].getRectangle();
-                    pages[0].drawImage(jpgImage, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+                    pages[0].drawImage(jpgImage, { 
+                        x: rect.x, y: rect.y, 
+                        width: rect.width, height: rect.height 
+                    });
                     f1Field.setText(""); 
-                } catch (imgErr) { console.error("Foto eklenemedi"); }
+                } catch (imgErr) { console.error("Fotoğraf basılamadı."); }
             }
 
-            form.flatten();
+            form.flatten(); // Formu düzleştir (düzenlenemez yap)
             const pdfBytes = await pdfDoc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
@@ -210,3 +218,4 @@ initPage();
 </script>
 </body>
 </html>
+
