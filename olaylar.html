@@ -29,9 +29,6 @@
     .btn-pdf { background: var(--success); color: #000; }
     .btn-delete { background: rgba(255, 77, 77, 0.1); color: var(--danger); border: 1px solid rgba(255, 77, 77, 0.2); }
     #logoutBtn { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; }
-    #modal, #deleteModal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
-    #modalContent { background: var(--card-bg); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; max-width: 600px; width: 100%; position: relative; }
-    .close-modal { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 1.5rem; cursor: pointer; }
     #loadingLayer { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     .loader { width: 50px; height: 50px; border: 3px solid #161b22; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -52,36 +49,16 @@
 <div class="filters">
     <select id="filterUser"><option value="">Tüm Personeller</option></select>
     <select id="filterType">
-        <option value="">Tüm Olay Türleri</option>
+        <option value="">Tüm Konular</option>
         <option value="Kapı açık">KAPI AÇIK</option>
         <option value="Hırsızlık">HIRSİZLIK</option>
-        <option value="Şüpheli Şahıs">SÜPHELİ SAHIS</option>
+        <option value="Yangın">YANGIN</option>
     </select>
-    <input type="date" id="filterStart">
-    <input type="date" id="filterEnd">
-    <button id="resetFilters">Filtreleri Sıfırla</button>
+    <button id="resetFilters" class="btn" style="background: #30363d; color: white;">FİLTRELERİ SIFIRLA</button>
 </div>
 
 <div id="message"></div>
 <div id="eventsContainer"></div>
-
-<div id="modal">
-    <div id="modalContent">
-        <span class="close-modal" id="modalClose">&times;</span>
-        <div id="modalText"></div>
-    </div>
-</div>
-
-<div id="deleteModal">
-    <div id="modalContent" style="text-align:center;">
-        <h2 style="color:var(--danger)">Olayı Sil?</h2>
-        <p id="deleteText" style="color:var(--text-s)"></p>
-        <div style="display:flex; gap:10px; justify-content:center; margin-top:30px;">
-            <button id="confirmDeleteBtn" class="btn" style="background:var(--danger); color:#fff; width:120px;">EVET, SİL</button>
-            <button id="cancelDeleteBtn" class="btn" style="background:rgba(255,255,255,0.1); color:#fff; width:120px;">İPTAL</button>
-        </div>
-    </div>
-</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
@@ -98,7 +75,6 @@ async function initPage(){
 
     const mApp = initializeApp(merkezConfig, "merkez");
     const sId = sessionStorage.getItem("selectedSiteId");
-    
     if(!sId) { window.location.href = "sirket.html"; return; }
 
     const siteSnap = await get(ref(getDatabase(mApp), `sites/${sId}/config`));
@@ -107,13 +83,12 @@ async function initPage(){
     const eventsContainer = document.getElementById('eventsContainer');
     const filterUser = document.getElementById('filterUser');
     const filterType = document.getElementById('filterType');
-    
     let allEvents = [];
-    let selectedEventToDelete = null;
 
     document.getElementById('logoutBtn').onclick = () => window.location.href = "sirket.html";
+    document.getElementById('resetFilters').onclick = () => { filterUser.value = ''; filterType.value = ''; renderEvents(); };
 
-    // --- TÜRKÇE KARAKTER TEMİZLEME VE BÜYÜTME ---
+    // --- TÜRKÇE KARAKTER TEMİZLİK VE BÜYÜTME ---
     function formatText(text) {
         if (!text) return "";
         return text.toString()
@@ -126,14 +101,13 @@ async function initPage(){
             .toUpperCase();
     }
 
-    // --- PDF KAYDETME (FIREBASE YAPISINA GÖRE) ---
-// --- PDF KAYDETME (TAM FIREBASE EŞLEŞTİRMESİ) ---
-async function savePDF(olay) {
+    // --- PDF KAYDETME (TAM EŞLEŞTİRME) ---
+    async function savePDF(olay) {
         try {
             const { PDFDocument } = PDFLib;
             const url = 'sablon.pdf?v=' + new Date().getTime(); 
             const response = await fetch(url);
-            if(!response.ok) throw new Error("sablon.pdf bulunamadi!");
+            if(!response.ok) throw new Error("sablon.pdf bulunamadi! Dosya ismini kontrol et.");
             
             const existingPdfBytes = await response.arrayBuffer();
             const pdfDoc = await PDFDocument.load(existingPdfBytes);
@@ -146,24 +120,22 @@ async function savePDF(olay) {
                     const field = form.getTextField(alan);
                     field.setMaxLength(undefined);
                     field.setText(formatText(metin));
-                } catch (e) { console.warn(alan + " kutusu PDF formunda bulunamadı, ismini kontrol et!"); }
+                } catch (e) { console.warn(alan + " kutusu PDF'de yok."); }
             };
 
-            // --- GÖRSELDEKİ PDF ŞABLONUNA GÖRE TAM EŞLEŞTİRME ---
-            yaz('R1', olay.raporNo || "");          // RAPOR NO (En üst sol)
-            yaz('G1', olay.location || "");         // GÖREV YERİ
-            yaz('T1', olay.tespitYeri || "");       // TESPİTİN YERİ
-            yaz('T2', olay.konu || "");             // TESPİTİN KONUSU
-            yaz('T3', olay.date || "");             // TARİH (Sağ üst)
-            yaz('T4', olay.time || "");             // SAAT
-            yaz('SIRA', olay.raporNo || "");        // SIRA (Sağ orta - Rapor no ile aynı)
-            
-            yaz('A1', olay.user || "");             // RAPORU HAZIRLAYAN ADI (A3 yazan yer)
-            yaz('A3', "GUVENLIK GOREVLISI");        // GÖREVİ (Sabit)
-            
-            yaz('Y1', olay.desc || "");             // BÜYÜK YORUM ALANI
+            // FIREBASE'DEN GELEN VERİLERİ PDF KUTULARINA BAS
+            yaz('R1', olay.raporNo);          // Rapor No: 0008
+            yaz('G1', olay.location);         // Görev Yeri: A blok giriş
+            yaz('T1', olay.tespitYeri);       // Tespitin Yeri: 3 kat
+            yaz('T2', olay.konu);             // Tespitin Konusu: Kapı açık
+            yaz('T3', olay.date);             // Tarih: 22.02.2026
+            yaz('T4', olay.time);             // Saat: 03:51:40
+            yaz('SIRA', olay.raporNo);        // Sıra kısmına da rapor no
+            yaz('A1', olay.user);             // Hazırlayan Adı
+            yaz('A3', "GUVENLIK GOREVLISI");  // Görevi (SABİT)
+            yaz('Y1', olay.desc);             // Büyük Açıklama
 
-            // --- FOTOĞRAF (F1) ---
+            // FOTOĞRAF (F1)
             if (olay.photoData) {
                 try {
                     const imageBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
@@ -172,24 +144,19 @@ async function savePDF(olay) {
                     const widgets = f1Field.acroField.getWidgets();
                     if (widgets.length > 0) {
                         const rect = widgets[0].getRectangle();
-                        firstPage.drawImage(jpgImage, {
-                            x: rect.x, y: rect.y,
-                            width: rect.width, height: rect.height
-                        });
+                        firstPage.drawImage(jpgImage, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
                         f1Field.setText(""); 
                     }
-                } catch (imgErr) { console.error("Fotoğraf PDF'e işlenemedi."); }
+                } catch (imgErr) { console.error("Fotoğraf PDF'e eklenemedi."); }
             }
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `CGA_RAPOR_${olay.raporNo}.pdf`;
+            link.download = `RAPOR_${olay.raporNo}.pdf`;
             link.click();
-        } catch (err) {
-            alert("Sistem Hatası: " + err.message);
-        }
+        } catch (err) { alert("Hata: " + err.message); }
     }
 
     function renderEvents(){
@@ -211,16 +178,17 @@ async function savePDF(olay) {
                     <span>📍 ${olay.location} (${olay.tespitYeri})</span>
                     <span style="text-align:right;">📅 ${olay.date} | ${olay.time}</span>
                 </div>
-                ${olay.photoData ? `<div class="img-container"><img src="${olay.photoData}" class="zoomImg"></div>` : ''}
+                ${olay.photoData ? `<div class="img-container"><img src="${olay.photoData}" style="width:100px;"></div>` : ''}
                 <div class="action-group">
                     <button class="btn btn-pdf">PDF RAPORU AL</button>
                     <button class="btn btn-delete">SİL</button>
                 </div>
             `;
             card.querySelector('.btn-pdf').onclick = () => savePDF(olay);
-            card.querySelector('.btn-delete').onclick = () => {
-                selectedEventToDelete = olay;
-                document.getElementById('deleteModal').style.display = 'flex';
+            card.querySelector('.btn-delete').onclick = async () => {
+                if(confirm("Bu raporu silmek istediğine emin misin?")) {
+                    await remove(ref(db, `securityEvents/${olay.user}/${olay.key}`));
+                }
             };
             eventsContainer.appendChild(card);
         });
@@ -243,18 +211,10 @@ async function savePDF(olay) {
         document.getElementById('loadingLayer').style.display = 'none';
     });
 
-    [filterUser, filterType].forEach(el => el.onchange = renderEvents);
-    document.getElementById('modalClose').onclick = () => document.getElementById('modal').style.display = 'none';
-    document.getElementById('cancelDeleteBtn').onclick = () => document.getElementById('deleteModal').style.display = 'none';
-    document.getElementById('confirmDeleteBtn').onclick = async () => {
-        if(selectedEventToDelete){
-            await remove(ref(db, `securityEvents/${selectedEventToDelete.user}/${selectedEventToDelete.key}`));
-            document.getElementById('deleteModal').style.display = 'none';
-        }
-    };
+    filterUser.onchange = renderEvents;
+    filterType.onchange = renderEvents;
 }
 initPage();
 </script>
 </body>
 </html>
-
