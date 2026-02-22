@@ -1,57 +1,120 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>CGA GÜVENLİK SİSTEMİ | KESİN ÇÖZÜM</title>
-    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-    <style>
-        :root { --bg: #0a0c10; --card-bg: #12151c; --accent: #00d2ff; --success: #00ff88; --text: #e6edf3; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 30px; }
-        .event-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 25px; margin-bottom: 15px; }
-        .btn { background: var(--success); color: #000; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        #loading { position: fixed; inset: 0; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 999; font-weight: bold; color: var(--accent); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CGA GÜVENLİK | Olay Takip Merkezi</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+<style>
+    :root { --bg: #0a0c10; --card-bg: #12151c; --accent: #00d2ff; --danger: #ff4d4d; --warning: #ffcc00; --success: #00ff88; --text: #e6edf3; --text-s: #8b949e; --border: rgba(255, 255, 255, 0.08); }
+    body { margin: 0; font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); padding: 20px; background-image: radial-gradient(circle at top right, rgba(0, 210, 255, 0.05), transparent); }
+    .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+    h1 { margin: 0; font-weight: 800; letter-spacing: -1px; text-transform: uppercase; font-size: 1.5rem; color: var(--accent); }
+    h1 span { color: #fff; font-weight: 300; margin-left: 5px; opacity: 0.6; }
+    .filters { background: var(--card-bg); padding: 20px; border-radius: 20px; display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .filters select, .filters input { background: #0d1117; border: 1px solid #30363d; color: white; padding: 12px; border-radius: 12px; font-family: 'Montserrat'; font-size: 13px; outline: none; transition: 0.3s; }
+    .event-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px; padding: 25px; margin-bottom: 20px; transition: 0.4s; position: relative; overflow: hidden; }
+    .event-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+    .event-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .event-user { font-family: 'JetBrains Mono'; color: var(--accent); background: rgba(0, 210, 255, 0.1); padding: 5px 12px; border-radius: 8px; font-size: 0.85rem; }
+    .event-type { font-weight: 800; text-transform: uppercase; font-size: 0.7rem; padding: 6px 14px; border-radius: 30px; background: rgba(255,255,255,0.05); }
+    .event-desc { color: var(--text-s); font-size: 0.95rem; line-height: 1.6; margin: 15px 0; }
+    .event-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem; color: var(--text-s); border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px; }
+    .img-container { margin-top: 15px; border-radius: 15px; overflow: hidden; border: 1px solid var(--border); width: fit-content; }
+    .event-card img { max-width: 200px; display: block; cursor: zoom-in; }
+    .action-group { display: flex; gap: 10px; margin-top: 20px; }
+    .btn { padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; border: none; transition: 0.3s; text-transform: uppercase; }
+    .btn-pdf { background: var(--success); color: #000; }
+    .btn-delete { background: rgba(255, 77, 77, 0.1); color: var(--danger); border: 1px solid rgba(255, 77, 77, 0.2); }
+    #logoutBtn { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+    #loadingLayer { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .loader { width: 50px; height: 50px; border: 3px solid #161b22; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
 
-<div id="loading">SİSTEM YÜKLENİYOR... LÜTFEN BEKLEYİN</div>
-<h1 style="color:var(--accent); text-transform: uppercase;">CGA Durum Tespit Paneli</h1>
-<hr style="opacity: 0.1; margin-bottom: 30px;">
+<div id="loadingLayer">
+    <div class="loader"></div>
+    <p style="margin-top:20px; font-weight: 800; color: var(--accent); letter-spacing: 3px;">CGA SİSTEM YÜKLENİYOR</p>
+</div>
+
+<div class="header-area">
+    <h1>CGA<span>GÜVENLİK SİSTEMİ</span></h1>
+    <button id="logoutBtn">GERİ</button>
+</div>
+
+<div class="filters">
+    <select id="filterUser"><option value="">Tüm Personeller</option></select>
+    <select id="filterType">
+        <option value="">Tüm Konular</option>
+        <option value="Kapı açık">KAPI AÇIK</option>
+        <option value="Hırsızlık">HIRSİZLIK</option>
+        <option value="Yangın">YANGIN</option>
+    </select>
+    <button id="resetFilters" class="btn" style="background: #30363d; color: white;">FİLTRELERİ SIFIRLA</button>
+</div>
+
 <div id="eventsContainer"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getDatabase, ref, onValue, remove, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-const mConfig = {
-    apiKey: "AIzaSyAM5NHBpRHIlttNXwJ9YKDypR4eoyQbDeM",
-    authDomain: "kolartguvenlik-e002d.firebaseapp.com",
-    databaseURL: "https://kolartguvenlik-e002d-default-rtdb.firebaseio.com",
-    projectId: "kolartguvenlik-e002d",
-    appId: "1:212955174898:web:f77501991c1648fb66bd6b"
-};
+async function initPage(){
+    const merkezConfig = {
+        apiKey: "AIzaSyAM5NHBpRHIlttNXwJ9YKDypR4eoyQbDeM",
+        authDomain: "kolartguvenlik-e002d.firebaseapp.com",
+        databaseURL: "https://kolartguvenlik-e002d-default-rtdb.firebaseio.com",
+        projectId: "kolartguvenlik-e002d",
+        appId: "1:212955174898:web:f77501991c1648fb66bd6b"
+    };
 
-async function start() {
-    const mApp = initializeApp(mConfig, "merkez");
-    const sId = sessionStorage.getItem("selectedSiteId") || "site1";
+    const mApp = initializeApp(merkezConfig, "merkez");
+    const sId = sessionStorage.getItem("selectedSiteId");
+    if(!sId) { window.location.href = "sirket.html"; return; }
+
     const siteSnap = await get(ref(getDatabase(mApp), `sites/${sId}/config`));
     const db = getDatabase(initializeApp(siteSnap.val(), sId));
 
-    function formatUpper(t) {
-        if (!t) return "";
-        return t.toString().replace(/ı/g, 'I').replace(/i/g, 'I').replace(/İ/g, 'I').replace(/ş/g, 'S').replace(/Ş/g, 'S').replace(/ğ/g, 'G').replace(/Ğ/g, 'G').replace(/ü/g, 'U').replace(/Ü/g, 'U').replace(/ö/g, 'O').replace(/Ö/g, 'O').replace(/ç/g, 'C').replace(/Ç/g, 'C').toUpperCase();
+    const eventsContainer = document.getElementById('eventsContainer');
+    const filterUser = document.getElementById('filterUser');
+    const filterType = document.getElementById('filterType');
+    let allEvents = [];
+
+    document.getElementById('logoutBtn').onclick = () => window.location.href = "sirket.html";
+    document.getElementById('resetFilters').onclick = () => { filterUser.value = ''; filterType.value = ''; renderEvents(); };
+
+    function formatText(text) {
+        if (!text) return "";
+        return text.toString()
+            .replace(/ı/g, 'I').replace(/i/g, 'I').replace(/İ/g, 'I')
+            .replace(/ş/g, 'S').replace(/Ş/g, 'S')
+            .replace(/ğ/g, 'G').replace(/Ğ/g, 'G')
+            .replace(/ü/g, 'U').replace(/Ü/g, 'U')
+            .replace(/ö/g, 'O').replace(/Ö/g, 'O')
+            .replace(/ç/g, 'C').replace(/Ç/g, 'C')
+            .toUpperCase();
     }
 
-    async function generatePDF(olay) {
+    async function savePDF(olay) {
         try {
             const { PDFDocument } = PDFLib;
-            const res = await fetch('sablon.pdf?v=' + Date.now());
-            const pdfDoc = await PDFDocument.load(await res.arrayBuffer());
+            const url = 'sablon.pdf?v=' + new Date().getTime(); 
+            const response = await fetch(url);
+            if(!response.ok) throw new Error("sablon.pdf bulunamadi!");
+            
+            const pdfDoc = await PDFDocument.load(await response.arrayBuffer());
             const form = pdfDoc.getForm();
-            const allFields = form.getFields(); // PDF içindeki her şeyi al
+            const pages = pdfDoc.getPages();
 
-            // --- EŞLEŞTİRME HARİTASI ---
-            const dataMap = {
+            // --- SENİN BULDUĞUN ÇÖZÜM: TÜM ALANLARI DOLAŞ ---
+            const fields = form.getFields();
+            
+            // Eşleştirme Listesi (Firebase -> PDF Alanı)
+            const mapping = {
                 'R1': olay.raporNo,
                 'SIRA': olay.raporNo,
                 'G1': olay.location,
@@ -64,69 +127,86 @@ async function start() {
                 'Y1': olay.desc
             };
 
-            // --- ÇÖZÜM: TÜM ALANLARI DÖNGÜYE SOK ---
-            allFields.forEach(field => {
-                const fieldName = field.getName(); // PDF'deki alanın adı
-                // Eğer bizim dataMap'imizde bu isimde bir veri varsa (R1, T3 vb.)
-                if (dataMap[fieldName] !== undefined) {
+            fields.forEach(field => {
+                const name = field.getName();
+                if (mapping[name] !== undefined) {
                     try {
-                        const textField = form.getTextField(fieldName);
-                        textField.setText(formatUpper(dataMap[fieldName]));
-                    } catch (e) {
-                        console.log(`${fieldName} alanı yazılamadı, muhtemelen metin kutusu değil.`);
-                    }
+                        const textField = form.getTextField(name);
+                        textField.setText(formatText(mapping[name]));
+                    } catch (e) { console.warn(name + " basılamadı"); }
                 }
             });
 
             // FOTOĞRAF (F1)
             if (olay.photoData) {
                 try {
-                    const img = await pdfDoc.embedJpg(await fetch(olay.photoData).then(r => r.arrayBuffer()));
-                    const f1 = form.getTextField('F1');
-                    const rect = f1.acroField.getWidgets()[0].getRectangle();
-                    pdfDoc.getPages()[0].drawImage(img, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
-                    f1.setText("");
-                } catch (e) { console.error("Fotoğraf hatası"); }
+                    const imgBytes = await fetch(olay.photoData).then(res => res.arrayBuffer());
+                    const jpgImage = await pdfDoc.embedJpg(imgBytes);
+                    const f1Field = form.getTextField('F1');
+                    const rect = f1Field.acroField.getWidgets()[0].getRectangle();
+                    pages[0].drawImage(jpgImage, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+                    f1Field.setText(""); 
+                } catch (imgErr) { console.error("Foto eklenemedi"); }
             }
 
-            const bytes = await pdfDoc.save();
-            const blob = new Blob([bytes], { type: 'application/pdf' });
+            form.flatten();
+            const pdfBytes = await pdfDoc.save();
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `CGA_Rapor_${olay.raporNo}.pdf`;
+            link.href = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
+            link.download = `RAPOR_${olay.raporNo}.pdf`;
             link.click();
         } catch (err) { alert("Hata: " + err.message); }
     }
 
-    onValue(ref(db, 'securityEvents'), snap => {
-        const cont = document.getElementById('eventsContainer');
-        cont.innerHTML = '';
-        document.getElementById('loading').style.display = 'none';
+    function renderEvents(){
+        eventsContainer.innerHTML = '';
+        let filtered = allEvents;
+        if(filterUser.value) filtered = filtered.filter(e => e.user === filterUser.value);
+        if(filterType.value) filtered = filtered.filter(e => e.konu === filterType.value);
         
+        filtered.sort((a,b) => (b.raporNo || 0) - (a.raporNo || 0)).forEach(olay => {
+            const card = document.createElement('div');
+            card.className = 'event-card';
+            card.innerHTML = `
+                <div class="event-header">
+                    <span class="event-user">${olay.user}</span>
+                    <span class="event-type">${olay.konu}</span>
+                </div>
+                <div class="event-desc">${olay.desc}</div>
+                <div class="event-meta">
+                    <span>📍 ${olay.location} (${olay.tespitYeri})</span>
+                    <span style="text-align:right;">📅 ${olay.date} | ${olay.time}</span>
+                </div>
+                ${olay.photoData ? `<div class="img-container"><img src="${olay.photoData}" style="width:100px;"></div>` : ''}
+                <div class="action-group">
+                    <button class="btn btn-pdf">PDF RAPORU AL</button>
+                </div>
+            `;
+            card.querySelector('.btn-pdf').onclick = () => savePDF(olay);
+            eventsContainer.appendChild(card);
+        });
+    }
+
+    onValue(ref(db, 'securityEvents'), snap => {
+        allEvents = [];
         if(snap.exists()){
-            Object.entries(snap.val()).forEach(([user, events]) => {
-                Object.entries(events).forEach(([key, val]) => {
-                    const olay = {...val, user, key};
-                    const div = document.createElement('div');
-                    div.className = 'event-card';
-                    div.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <strong style="color:var(--accent); font-size:1.2rem;">#${olay.raporNo} - ${olay.konu}</strong><br>
-                                <small>Tarih: ${olay.date} | Personel: ${olay.user}</small>
-                            </div>
-                            <button class="btn">PDF OLUŞTUR</button>
-                        </div>
-                        <p style="margin-top:15px; opacity:0.8;">${olay.desc}</p>
-                    `;
-                    div.querySelector('button').onclick = () => generatePDF(olay);
-                    cont.appendChild(div);
-                });
-            });
+            const data = snap.val();
+            for(let u in data){
+                for(let k in data[u]){
+                    allEvents.push({...data[u][k], user:u, key:k});
+                }
+            }
+            const users = [...new Set(allEvents.map(e => e.user))];
+            filterUser.innerHTML = '<option value="">Tüm Personeller</option>' + users.map(u => `<option value="${u}">${u}</option>`).join('');
         }
+        renderEvents();
+        document.getElementById('loadingLayer').style.display = 'none';
     });
+
+    filterUser.onchange = renderEvents;
+    filterType.onchange = renderEvents;
 }
-start();
+initPage();
 </script>
 </body>
 </html>
